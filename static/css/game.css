@@ -1,0 +1,313 @@
+#visualization {
+    background-color: rgba(0, 0, 0, 0.3);
+    overflow: hidden;
+    position: relative;
+}
+
+/* Style untuk node proses */
+.process-node {
+    fill: #6366f1;
+    stroke: #4f46e5;
+    stroke-width: 2px;
+}
+
+/* Style untuk node resource */
+.resource-node {
+    fill: #10b981;
+    stroke: #059669;
+    stroke-width: 2px;
+}
+
+/* Style untuk edge alokasi (resource → proses) */
+.allocation-edge {
+    stroke: #f97316;
+    stroke-width: 2px;
+}
+
+/* Style untuk edge request (proses → resource) */
+.request-edge {
+    stroke: #8b5cf6;
+    stroke-width: 2px;
+    stroke-dasharray: 5,5;
+}
+
+/* Style untuk proses yang mengalami deadlock */
+.deadlock-process {
+    fill: #ef4444;
+    stroke: #dc2626;
+    stroke-width: 2px;
+}
+
+/* SVG text styling */
+svg text {
+    font-size: 14px;
+    font-weight: bold;
+    user-select: none;
+}
+
+/* Arrow styling */
+polygon.allocation-edge {
+    fill: #f97316;
+}
+
+polygon.request-edge {
+    fill: #8b5cf6;
+}
+
+/* Animation untuk highlight saat deadlock terdeteksi */
+@keyframes pulse {
+    0% { opacity: 0.6; stroke-width: 2px; }
+    50% { opacity: 1; stroke-width: 4px; }
+    100% { opacity: 0.6; stroke-width: 2px; }
+}
+
+.deadlock-highlight {
+    animation: pulse 2s infinite;
+}
+
+/* Styling untuk step-by-step visualization */
+.step-container {
+    border-left: 3px solid rgba(255, 255, 255, 0.2);
+    padding-left: 1rem;
+    position: relative;
+}
+
+.step-container::before {
+    content: '';
+    position: absolute;
+    left: -8px;
+    top: 0;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background-color: #6366f1;
+}
+
+.step-container.completed::before {
+    background-color: #10b981;
+}
+
+.step-container.current::before {
+    background-color: #f59e0b;
+    box-shadow: 0 0 8px rgba(245, 158, 11, 0.6);
+}
+
+/* Animation for step transitions */
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.step-animation {
+    animation: fadeIn 0.3s ease-out;
+}
+
+/* Styling for process termination */
+.terminated-process {
+    opacity: 0.6;
+    filter: grayscale(100%);
+    text-decoration: line-through;
+}
+
+/* Highlighting for safe sequence */
+.safe-sequence-item {
+    display: inline-block;
+    padding: 0.25rem 0.5rem;
+    margin: 0.2rem;
+    background-color: rgba(16, 185, 129, 0.3);
+    border-radius: 0.25rem;
+}
+
+/* Core-based styling for processes */
+.core1-process {
+    fill: #3b82f6;
+    stroke: #2563eb;
+    stroke-width: 2px;
+}
+
+.core2-process {
+    fill: #ef4444;
+    stroke: #dc2626;
+    stroke-width: 2px;
+}
+
+.core3-process {
+    fill: #10b981;
+    stroke: #059669;
+    stroke-width: 2px;
+}
+
+.core4-process {
+    fill: #f59e0b;
+    stroke: #d97706;
+    stroke-width: 2px;
+}
+
+/* Process form styling */
+.process-form {
+    background-color: rgba(0, 0, 0, 0.2);
+    border-radius: 0.5rem;
+    padding: 0.75rem;
+    margin-bottom: 0.75rem;
+}
+
+.process-form input[type="number"] {
+    width: 3rem;
+    text-align: center;
+}
+
+/* Animation for process creation */
+@keyframes slideDown {
+    from { opacity: 0; transform: translateY(-10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.new-process-animation {
+    animation: slideDown 0.3s ease-out;
+}
+
+/* Animations for Detection & Recovery */
+@keyframes dashOffset {
+    from { stroke-dashoffset: 0; }
+    to { stroke-dashoffset: 50; }
+}
+
+@keyframes resourceFreed {
+    0% { 
+        transform: translate(0, 0);
+        opacity: 1;
+    }
+    100% { 
+        transform: translate(
+            calc(var(--to-x) - var(--from-x, 0)),
+            calc(var(--to-y) - var(--from-y, 0))
+        );
+        opacity: 0;
+    }
+}
+
+@keyframes checkmarkDraw {
+    from { stroke-dashoffset: 100; }
+    to { stroke-dashoffset: 0; }
+}
+
+/* Animation classes */
+.circular-wait {
+    animation: dashOffset 15s linear infinite;
+}
+
+.pulse-animation {
+    animation: pulse 2s infinite;
+}
+
+.success-pulse-animation {
+    animation: pulse 1.5s infinite;
+    stroke: #22c55e;
+}
+
+.terminate-animation {
+    stroke-dasharray: 60;
+    stroke-dashoffset: 60;
+    animation: checkmarkDraw 0.5s forwards;
+}
+
+.continue-animation {
+    stroke-dasharray: 100;
+    stroke-dashoffset: 100;
+    animation: checkmarkDraw 1s forwards;
+}
+
+.resource-freed-animation {
+    animation: resourceFreed 1.5s forwards ease-out;
+}
+
+.resource-text-animation {
+    animation: fadeIn 0.5s forwards;
+}
+
+/* Detection specific styles */
+.deadlock-cycle-arrow {
+    stroke: #f43f5e;
+    stroke-width: 2px;
+}
+
+.deadlock-cycle-text {
+    fill: #f43f5e;
+    font-size: 12px;
+}
+
+/* Recovery specific styles */
+.freed-resource {
+    fill: #22c55e;
+    stroke: #059669;
+    animation: pulse 1.5s infinite;
+}
+
+.resource-amount-badge {
+    fill: #22c55e;
+    stroke: #059669;
+    stroke-width: 1px;
+}
+
+/* Banker's Algorithm specific styles */
+.safe-sequence-node {
+    border-radius: 9999px;
+    width: 2rem;
+    height: 2rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 600;
+    transition: all 0.3s ease;
+}
+
+.safe-sequence-node.executed {
+    background-color: rgba(34, 197, 94, 0.3);
+}
+
+.safe-sequence-node.current {
+    background-color: rgba(59, 130, 246, 0.5);
+    transform: scale(1.1);
+    box-shadow: 0 0 15px rgba(59, 130, 246, 0.6);
+}
+
+.safe-sequence-node.pending {
+    background-color: rgba(148, 163, 184, 0.3);
+}
+
+.safe-sequence-arrow {
+    animation: fadeIn 0.5s forwards;
+}
+
+@keyframes resourceRelease {
+    0% { 
+        transform: translate(0, 0) scale(1);
+        opacity: 1;
+    }
+    100% { 
+        transform: translate(
+            calc(var(--to-x) - var(--from-x, 0)),
+            calc(var(--to-y) - var(--from-y, 0))
+        ) scale(1.5);
+        opacity: 0;
+    }
+}
+
+.resource-release-animation {
+    animation: resourceRelease 1s forwards ease-out;
+}
+
+/* Safe sequence color coding */
+.seq-executed {
+    color: #22c55e;
+}
+
+.seq-current {
+    color: #3b82f6;
+    font-weight: bold;
+}
+
+.seq-pending {
+    color: #94a3b8;
+    opacity: 0.8;
+}

@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Deadlock Solver Game</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gradient-to-br from-purple-800 to-indigo-900 text-white min-h-screen flex flex-col items-center justify-center">
+    <div class="container mx-auto px-4 py-8 text-center">
+        <h1 class="text-6xl font-bold mb-4">🎮 Deadlock Solver</h1>
+        <p class="text-xl mb-8">Pelajari konsep deadlock dalam sistem operasi melalui pendekatan interaktif</p>
+        
+        <div class="max-w-2xl mx-auto bg-white/10 backdrop-blur-sm rounded-xl p-8 mb-8">
+            <h2 class="text-2xl font-bold mb-4">Apa itu Deadlock?</h2>
+            <p class="mb-4">Deadlock adalah situasi dimana dua atau lebih proses saling menunggu untuk menggunakan resource yang dikuasai oleh proses lainnya, sehingga tidak ada satupun proses yang bisa melanjutkan eksekusi.</p>
+            <p class="mb-4">Deadlock terjadi ketika empat kondisi berikut terpenuhi:</p>
+            <ol class="list-decimal list-inside text-left mb-4">
+                <li>Mutual Exclusion: Resource hanya bisa digunakan oleh satu proses pada satu waktu</li>
+                <li>Hold and Wait: Proses memegang resource sambil menunggu resource lain</li>
+                <li>No Preemption: Resource tidak bisa diambil paksa dari proses</li>
+                <li>Circular Wait: Ada rantai proses yang saling menunggu resource dalam bentuk siklik</li>
+            </ol>
+            <p>Dalam game ini, kamu akan belajar cara mengidentifikasi dan menyelesaikan deadlock!</p>
+        </div>
+        
+        <a href="/game" class="bg-gradient-to-r from-green-400 to-blue-500 hover:from-green-500 hover:to-blue-600 text-white font-bold py-4 px-8 rounded-full text-xl transition-all transform hover:scale-105">
+            Mulai Game
+        </a>
+    </div>
+    
+    <footer class="mt-auto py-4">
+        <p>Deadlock Solver Game - Edukasi Sistem Operasi</p>
+    </footer>
+</body>
+</html>
