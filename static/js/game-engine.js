@@ -11,6 +11,11 @@ class DeadlockGameEngine {
             deadlockOccurred: false,
             deadlockResolved: false,
             deadlockCycle: [],
+            availableStrategies: {
+                preemption: true,
+                kill: true,
+                rollback: true
+            },
             score: 0,
             timer: 0,
             timerInterval: null,
@@ -68,6 +73,11 @@ class DeadlockGameEngine {
             deadlockOccurred: false,
             deadlockResolved: false,
             deadlockCycle: [],
+            availableStrategies: {
+                preemption: true,
+                kill: true,
+                rollback: true
+            },
             score: 0,
             timer: 0,
             timerInterval: null,
@@ -150,30 +160,8 @@ class DeadlockGameEngine {
      * Dealokasikan resource dari proses
      */
     deallocateResource(processId, resourceId) {
-        // Cari proses dan resource
-        const process = this.gameState.processes.find(p => p.id === processId);
-        const resource = this.gameState.resources.find(r => r.id === resourceId);
-        
-        // Validasi input
-        if (!process || !resource) {
-            console.error('Process or resource not found!');
-            return false;
-        }
-        
-        // Cek apakah resource dialokasikan ke proses ini
-        if (resource.held_by !== processId) {
-            console.error(`Resource ${resourceId} is not held by process ${processId}!`);
-            return false;
-        }
-        
-        // Dealokasikan resource
-        process.allocation = process.allocation.filter(id => id !== resourceId);
-        resource.held_by = null;
-        
-        // Trigger event resource deallocated
-        this.triggerEvent('resourceDeallocated', { process, resource });
-        
-        return true;
+        console.error('Resource deallocation is not allowed outside of deadlock resolution strategies.');
+        return false;
     }
 
     /**
@@ -217,9 +205,21 @@ class DeadlockGameEngine {
         if (result.detected) {
             this.gameState.deadlockOccurred = true;
             this.gameState.deadlockCycle = result.cycle;
+            this.gameState.deadlockResolved = false; // Reset state untuk deadlock baru
+            
+            // Cek apakah masih ada strategi yang bisa digunakan
+            const hasAvailableStrategies = Object.values(this.gameState.availableStrategies).some(available => available);
+            
+            if (!hasAvailableStrategies) {
+                // Tidak ada strategi tersisa, pemain kalah
+                this.endGame('failed', 'Level failed! No more strategies available to resolve deadlock.');
+            }
             
             // Trigger event deadlock detected
-            this.triggerEvent('deadlockDetected', { cycle: result.cycle });
+            this.triggerEvent('deadlockDetected', { 
+                cycle: result.cycle,
+                hasStrategies: hasAvailableStrategies
+            });
             
             return true;
         }
@@ -231,6 +231,15 @@ class DeadlockGameEngine {
      * Tangani deadlock dengan preemption
      */
     handleDeadlockWithPreemption(processId, resourceId) {
+        // Cek apakah strategi ini masih tersedia
+        if (!this.gameState.availableStrategies.preemption) {
+            this.triggerEvent('strategyUnavailable', { 
+                strategy: 'preemption',
+                message: 'Preemption strategy has already been used!'
+            });
+            return false;
+        }
+        
         // Validasi input
         const process = this.gameState.processes.find(p => p.id === processId);
         const resource = this.gameState.resources.find(r => r.id === resourceId);
@@ -246,30 +255,56 @@ class DeadlockGameEngine {
             return false;
         }
         
-        // Dealokasikan resource
-        if (this.deallocateResource(processId, resourceId)) {
-            // Cek apakah deadlock masih ada
-            if (!this.checkDeadlock()) {
-                this.gameState.deadlockResolved = true;
-                this.gameState.score -= 20; // Penalty for preemption
-                
-                // Trigger event deadlock resolved
-                this.triggerEvent('deadlockResolved', { method: 'preemption', process, resource });
-                
-                // Cek kondisi kemenangan
-                this.checkWinCondition();
-                
-                return true;
-            }
-        }
+        // PREEMPTION: Hanya mengambil resource dari proses tanpa menghentikan prosesnya
+        // Tetapi membuat resource tersedia untuk proses lain
+        resource.held_by = null;  // Bebaskan resource
+        process.allocation = process.allocation.filter(id => id !== resourceId); // Hapus dari alokasi proses
         
-        return false;
+        // Cek apakah deadlock masih ada
+        const deadlockBefore = this.gameState.deadlockOccurred;
+        this.gameState.deadlockOccurred = false; // Reset untuk cek ulang
+        
+        if (!this.checkDeadlock()) {
+            // Deadlock teratasi
+            this.gameState.deadlockResolved = true;
+            
+            // Tandai strategi ini sebagai sudah digunakan
+            this.gameState.availableStrategies.preemption = false;
+            
+            // Kurangi skor - biarkan menjadi minus jika perlu
+            this.gameState.score -= 20; // Penalty for preemption
+            
+            // Trigger event deadlock resolved
+            this.triggerEvent('deadlockResolved', { 
+                method: 'preemption', 
+                process, 
+                resource,
+                message: `Resource ${resource.id} was forcefully taken from ${process.name} (${process.id}). Process continues to run, waiting for the resource.`
+            });
+            
+            return true;
+        } else {
+            // Deadlock masih ada, kembalikan seperti semula
+            if (!deadlockBefore) {
+                this.gameState.deadlockOccurred = false;
+            }
+            return false;
+        }
     }
 
     /**
      * Tangani deadlock dengan kill process
      */
     handleDeadlockWithKill(processId) {
+        // Cek apakah strategi ini masih tersedia
+        if (!this.gameState.availableStrategies.kill) {
+            this.triggerEvent('strategyUnavailable', { 
+                strategy: 'kill',
+                message: 'Kill Process strategy has already been used!'
+            });
+            return false;
+        }
+        
         // Validasi input
         const process = this.gameState.processes.find(p => p.id === processId);
         
@@ -278,57 +313,126 @@ class DeadlockGameEngine {
             return false;
         }
         
-        // Bebaskan semua resource yang dialokasikan ke proses ini
+        // Simpan resource yang dipegang oleh proses
         const allocatedResources = [...process.allocation];
+        const freedResourceDetails = [];
+        
+        // KILL PROCESS: Mematikan proses dan membebaskan semua resourcenya
+        
+        // Bebaskan semua resource yang dipegang
         allocatedResources.forEach(resourceId => {
-            this.deallocateResource(processId, resourceId);
+            const resource = this.gameState.resources.find(r => r.id === resourceId);
+            if (resource) {
+                resource.held_by = null;
+                freedResourceDetails.push(resource);
+            }
         });
         
-        // Hapus proses dari active processes (tidak ditambahkan ke completed)
+        // Hapus proses dari daftar proses aktif
         this.gameState.processes = this.gameState.processes.filter(p => p.id !== processId);
         
         // Cek apakah deadlock masih ada
+        const deadlockBefore = this.gameState.deadlockOccurred;
+        this.gameState.deadlockOccurred = false; // Reset untuk cek ulang
+        
         if (!this.checkDeadlock()) {
+            // Deadlock teratasi
             this.gameState.deadlockResolved = true;
-            this.gameState.score -= 50; // Larger penalty for killing
+            
+            // Tandai strategi ini sebagai sudah digunakan
+            this.gameState.availableStrategies.kill = false;
+            
+            // Kurangi skor - biarkan menjadi minus jika perlu
+            this.gameState.score -= 50; // Penalty for killing
             
             // Trigger event deadlock resolved
-            this.triggerEvent('deadlockResolved', { method: 'kill', process });
-            
-            // Cek kondisi kemenangan
-            this.checkWinCondition();
+            const resourceNames = freedResourceDetails.map(r => r.id).join(', ');
+            this.triggerEvent('deadlockResolved', { 
+                method: 'kill', 
+                process,
+                freedResources: freedResourceDetails,
+                message: `Process ${process.name} (${process.id}) was terminated, freeing resources: ${resourceNames}`
+            });
             
             return true;
+        } else {
+            // Deadlock masih ada, kembalikan seperti semula
+            if (!deadlockBefore) {
+                this.gameState.deadlockOccurred = false;
+            }
+            return false;
         }
-        
-        return false;
     }
 
     /**
      * Tangani deadlock dengan rollback
      */
     handleDeadlockWithRollback() {
-        // Implementasi sederhana: bebaskan semua alokasi resource
-        const success = this.gameState.processes.some(process => {
-            if (process.allocation.length > 0) {
-                const allocatedResources = [...process.allocation];
-                allocatedResources.forEach(resourceId => {
-                    this.deallocateResource(process.id, resourceId);
-                });
-                return true;
-            }
+        // Cek apakah strategi ini masih tersedia
+        if (!this.gameState.availableStrategies.rollback) {
+            this.triggerEvent('strategyUnavailable', { 
+                strategy: 'rollback',
+                message: 'Rollback strategy has already been used!'
+            });
             return false;
+        }
+        
+        // Track resources yang dibebaskan
+        const releasedAllocations = [];
+        
+        // ROLLBACK: Reset semua alokasi resource, tapi tidak menghapus proses
+        let success = false;
+        
+        // Catat semua alokasi sebelum direset
+        this.gameState.processes.forEach(process => {
+            if (process.allocation.length > 0) {
+                const processAllocation = {
+                    process: process,
+                    resources: []
+                };
+                
+                // Reset alokasi proses
+                process.allocation.forEach(resourceId => {
+                    const resource = this.gameState.resources.find(r => r.id === resourceId);
+                    if (resource) {
+                        processAllocation.resources.push(resource);
+                        resource.held_by = null; // Bebaskan resource
+                    }
+                });
+                
+                // Kosongkan alokasi proses
+                process.allocation = [];
+                
+                if (processAllocation.resources.length > 0) {
+                    releasedAllocations.push(processAllocation);
+                    success = true;
+                }
+            }
         });
         
         if (success) {
-            // Reset deadlock state
+            // Cek apakah deadlock masih ada (seharusnya tidak karena semua resource dibebaskan)
             this.gameState.deadlockOccurred = false;
             this.gameState.deadlockResolved = true;
             this.gameState.deadlockCycle = [];
+            
+            // Tandai strategi ini sebagai sudah digunakan
+            this.gameState.availableStrategies.rollback = false;
+            
+            // Kurangi skor - biarkan menjadi minus jika perlu
             this.gameState.score -= 30; // Penalty for rollback
             
+            // Buat pesan yang menjelaskan efek rollback
+            let rollbackDetails = releasedAllocations.map(item => 
+                `${item.process.name} (${item.process.id}) released ${item.resources.map(r => r.id).join(', ')}`
+            ).join('; ');
+            
             // Trigger event deadlock resolved
-            this.triggerEvent('deadlockResolved', { method: 'rollback' });
+            this.triggerEvent('deadlockResolved', { 
+                method: 'rollback',
+                releasedAllocations: releasedAllocations,
+                message: `All allocations were reset: ${rollbackDetails}`
+            });
             
             return true;
         }
@@ -342,6 +446,7 @@ class DeadlockGameEngine {
     checkWinCondition() {
         const win = checkWinCondition(this.currentLevel, this.gameState);
         
+        // Tidak ada pengecekan skor minimum lagi
         if (win) {
             this.endGame('completed', 'Level completed!');
             return true;

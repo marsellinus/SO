@@ -31,6 +31,10 @@
                         class="bg-indigo-600 hover:bg-indigo-700 px-4 py-2 rounded-lg transition-colors">
                     Level Select
                 </button>
+                <a href="/" 
+                   class="bg-red-600 hover:bg-red-700 px-4 py-2 rounded-lg transition-colors">
+                    Exit Game
+                </a>
             </div>
         </header>
 
@@ -162,16 +166,13 @@
                                     </div>
                                 </div>
                                 
-                                <!-- Allocated Resources -->
+                                <!-- Allocated Resources (tanpa tombol X) -->
                                 <div class="mt-2" x-show="process.allocation.length > 0">
                                     <div class="text-xs text-gray-300 mb-1">Allocated:</div>
                                     <div class="flex flex-wrap gap-1">
                                         <template x-for="resourceId in process.allocation" :key="resourceId">
-                                            <div class="text-xs bg-green-700 px-2 py-1 rounded flex items-center"
-                                                @click="releaseResource(process.id, resourceId)"
-                                                class="cursor-pointer hover:bg-green-800">
+                                            <div class="text-xs bg-green-700 px-2 py-1 rounded flex items-center">
                                                 <span x-text="getResourceNameById(resourceId)"></span>
-                                                <span class="ml-1 text-xs">×</span>
                                             </div>
                                         </template>
                                     </div>
@@ -223,32 +224,135 @@
                     </div>
                     
                     <!-- Deadlock Actions -->
-                    <div class="mt-4" x-show="gameState.deadlockOccurred && !gameState.deadlockResolved">
-                        <h3 class="font-bold text-lg mb-2">Deadlock Resolution</h3>
-                        <p class="text-sm mb-2">Select a strategy to resolve the deadlock:</p>
-                        <div class="flex flex-wrap gap-2">
-                            <button @click="showPreemptionModal = true" 
-                                    class="bg-yellow-600 hover:bg-yellow-700 px-3 py-2 rounded text-sm">
-                                Preemption
-                            </button>
-                            <button @click="showKillModal = true" 
-                                    class="bg-red-600 hover:bg-red-700 px-3 py-2 rounded text-sm">
-                                Kill Process
-                            </button>
-                            <button @click="resolveDeadlockWithRollback()" 
-                                    class="bg-purple-600 hover:bg-purple-700 px-3 py-2 rounded text-sm">
-                                Rollback All
-                            </button>
+                    <div class="mt-4" x-show="gameState.deadlockOccurred">
+                        <div class="grid grid-cols-1 gap-3">
+                            <!-- Preemption Strategy -->
+                            <div class="bg-black/20 p-3 rounded-lg hover:bg-black/30 cursor-pointer"
+                                 :class="{'opacity-50 cursor-not-allowed': !gameState.availableStrategies.preemption}"
+                                 @click="gameState.availableStrategies.preemption ? showPreemptionModal = true : showStrategyUnavailableMessage('preemption')">
+                                <div class="flex items-center justify-between">
+                                    <div class="flex items-center">
+                                        <div class="bg-yellow-600 p-2 rounded-full mr-3 text-xl">⚡</div>
+                                        <div>
+                                            <h4 class="font-bold">Preemption</h4>
+                                            <p class="text-xs text-gray-300">Force take a resource from a process</p>
+                                        </div>
+                                    </div>
+                                    <div class="flex items-center">
+                                        <div class="text-xs bg-yellow-600/30 px-2 py-1 rounded">-20 pts</div>
+                                        <span x-show="!gameState.availableStrategies.preemption" class="ml-2 text-red-400">Used</span>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Kill Process Strategy -->
+                            <div class="bg-black/20 p-3 rounded-lg hover:bg-black/30 cursor-pointer"
+                                 :class="{'opacity-50 cursor-not-allowed': !gameState.availableStrategies.kill}"
+                                 @click="gameState.availableStrategies.kill ? showKillModal = true : showStrategyUnavailableMessage('kill')">
+                                <div class="flex items-center justify-between">
+                                    <div class="flex items-center">
+                                        <div class="bg-red-600 p-2 rounded-full mr-3 text-xl">✖</div>
+                                        <div>
+                                            <h4 class="font-bold">Kill Process</h4>
+                                            <p class="text-xs text-gray-300">Terminate a deadlocked process</p>
+                                        </div>
+                                    </div>
+                                    <div class="flex items-center">
+                                        <div class="text-xs bg-red-600/30 px-2 py-1 rounded">-50 pts</div>
+                                        <span x-show="!gameState.availableStrategies.kill" class="ml-2 text-red-400">Used</span>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Rollback Strategy -->
+                            <div class="bg-black/20 p-3 rounded-lg hover:bg-black/30 cursor-pointer"
+                                 :class="{'opacity-50 cursor-not-allowed': !gameState.availableStrategies.rollback}"
+                                 @click="gameState.availableStrategies.rollback ? resolveDeadlockWithRollback() : showStrategyUnavailableMessage('rollback')">
+                                <div class="flex items-center justify-between">
+                                    <div class="flex items-center">
+                                        <div class="bg-purple-600 p-2 rounded-full mr-3 text-xl">↩</div>
+                                        <div>
+                                            <h4 class="font-bold">Rollback All</h4>
+                                            <p class="text-xs text-gray-300">Reset all resource allocations</p>
+                                        </div>
+                                    </div>
+                                    <div class="flex items-center">
+                                        <div class="text-xs bg-purple-600/30 px-2 py-1 rounded">-30 pts</div>
+                                        <span x-show="!gameState.availableStrategies.rollback" class="ml-2 text-red-400">Used</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Help tip -->
+                        <div class="mt-3 bg-blue-900/30 p-2 rounded-lg text-sm">
+                            <p class="flex items-center">
+                                <span class="text-blue-300 mr-1">⚠️</span>
+                                <span>Warning: Each strategy can be used only once per level and will reduce your score.</span>
+                            </p>
                         </div>
                     </div>
-                    
+
                     <!-- Deadlock Resolved Message -->
-                    <div class="mt-4" x-show="gameState.deadlockResolved">
+                    <div class="mt-4" x-show="gameState.deadlockResolved && !gameState.deadlockOccurred">
                         <div class="bg-green-900/30 p-3 rounded-lg">
                             <div class="font-bold text-green-400 flex items-center">
                                 <span class="text-lg mr-2">✓</span> Deadlock Resolved
                             </div>
-                            <p class="text-sm mt-1">Continue allocating resources to complete processes.</p>
+                            <p class="text-sm mt-1" x-text="lastDeadlockResolutionMessage || 'Continue allocating resources to complete processes.'"></p>
+                            
+                            <div class="mt-2 text-xs bg-black/20 p-2 rounded" x-show="lastDeadlockResolutionMethod">
+                                <span class="font-semibold">Method used:</span>
+                                <span x-text="formatResolutionMethod(lastDeadlockResolutionMethod)" class="ml-1"></span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Available Strategies Display (even after deadlock is resolved) -->
+                    <div class="mt-4" x-show="!gameState.deadlockOccurred">
+                        <div class="bg-black/20 p-3 rounded-lg">
+                            <h3 class="font-bold text-sm mb-2">Remaining Strategies</h3>
+                            <div class="flex flex-wrap gap-2">
+                                <span :class="{
+                                    'bg-green-600/30': gameState.availableStrategies.preemption,
+                                    'bg-red-600/30': !gameState.availableStrategies.preemption
+                                    }" 
+                                    class="text-xs px-2 py-1 rounded flex items-center">
+                                    <span class="w-4 h-4 inline-flex items-center justify-center rounded-full mr-1"
+                                          :class="{'bg-green-500': gameState.availableStrategies.preemption, 'bg-red-500': !gameState.availableStrategies.preemption}">
+                                        <span x-text="gameState.availableStrategies.preemption ? '✓' : '×'" class="text-white text-xs"></span>
+                                    </span>
+                                    Preemption: <span x-text="gameState.availableStrategies.preemption ? 'Can be used' : 'Already used'"></span>
+                                </span>
+                                
+                                <span :class="{
+                                    'bg-green-600/30': gameState.availableStrategies.kill,
+                                    'bg-red-600/30': !gameState.availableStrategies.kill
+                                    }" 
+                                    class="text-xs px-2 py-1 rounded flex items-center">
+                                    <span class="w-4 h-4 inline-flex items-center justify-center rounded-full mr-1"
+                                          :class="{'bg-green-500': gameState.availableStrategies.kill, 'bg-red-500': !gameState.availableStrategies.kill}">
+                                        <span x-text="gameState.availableStrategies.kill ? '✓' : '×'" class="text-white text-xs"></span>
+                                    </span>
+                                    Kill Process: <span x-text="gameState.availableStrategies.kill ? 'Can be used' : 'Already used'"></span>
+                                </span>
+                                
+                                <span :class="{
+                                    'bg-green-600/30': gameState.availableStrategies.rollback,
+                                    'bg-red-600/30': !gameState.availableStrategies.rollback
+                                    }" 
+                                    class="text-xs px-2 py-1 rounded flex items-center">
+                                    <span class="w-4 h-4 inline-flex items-center justify-center rounded-full mr-1"
+                                          :class="{'bg-green-500': gameState.availableStrategies.rollback, 'bg-red-500': !gameState.availableStrategies.rollback}">
+                                        <span x-text="gameState.availableStrategies.rollback ? '✓' : '×'" class="text-white text-xs"></span>
+                                    </span>
+                                    Rollback: <span x-text="gameState.availableStrategies.rollback ? 'Can be used' : 'Already used'"></span>
+                                </span>
+                            </div>
+                            
+                            <p class="text-xs mt-2 text-gray-300">
+                                <span class="text-yellow-300">Note:</span> If another deadlock occurs, you can only use the remaining strategies marked as "Can be used".
+                            </p>
                         </div>
                     </div>
                 </div>
@@ -308,8 +412,7 @@
             <div class="space-y-2 max-h-60 overflow-y-auto mb-4">
                 <template x-for="process in getProcessesInDeadlock()" :key="process.id">
                     <div class="bg-black/20 p-3 rounded-lg">
-                        <div class="font-medium mb-2" x-text="process.name"></div>
-                        <div class="text-sm">Allocated resources:</div>
+                        <h3 class="font-bold text-lg mb-2" x-text="process.name"></h3>
                         <div class="flex flex-wrap gap-1 mt-1">
                             <template x-for="resourceId in process.allocation" :key="resourceId">
                                 <button @click="resolveDeadlockWithPreemption(process.id, resourceId)"
@@ -375,14 +478,23 @@
                     deadlockCycle: [],
                     score: 0,
                     timer: 0,
-                    status: 'not_started'
+                    status: 'not_started',
+                    availableStrategies: {
+                        preemption: true,
+                        kill: true,
+                        rollback: true
+                    }
                 },
                 showLevelSelect: false,
                 showLevelIntro: false,
                 showPreemptionModal: false,
                 showKillModal: false,
+                showStrategyToast: false,
+                strategyToastMessage: '',
                 hasNextLevel: false,
                 nextLevelClicked: false,
+                lastDeadlockResolutionMethod: null,
+                lastDeadlockResolutionMessage: null,
                 
                 init() {
                     // Initialize game engine
@@ -420,10 +532,21 @@
                     
                     this.gameEngine.on('deadlockResolved', (data) => {
                         this.gameState.deadlockResolved = true;
+                        this.lastDeadlockResolutionMethod = data.method;
+                        this.lastDeadlockResolutionMessage = data.message;
                         this.updateStateFromEngine();
                         this.showPreemptionModal = false;
                         this.showKillModal = false;
                         this.renderVisualization();
+                        
+                        // Mark strategy as used
+                        if (data.method === 'preemption') {
+                            this.gameState.availableStrategies.preemption = false;
+                        } else if (data.method === 'kill') {
+                            this.gameState.availableStrategies.kill = false;
+                        } else if (data.method === 'rollback') {
+                            this.gameState.availableStrategies.rollback = false;
+                        }
                     });
                     
                     this.gameEngine.on('gameEnded', (data) => {
@@ -433,10 +556,14 @@
                         // dan level berikutnya tersedia
                         if (data.status === 'completed') {
                             const nextLevelId = this.currentLevel.id + 1;
-                            this.hasNextLevel = this.levels.some(level => level.id === nextLevelId);
+                            this.hasNextLevel = this.levels.some(level => level.id === nextLevelId); 
                         } else {
                             this.hasNextLevel = false;
                         }
+                    });
+                    
+                    this.gameEngine.on('strategyUnavailable', (data) => {
+                        this.showStrategyUnavailableMessage(data.strategy, data.message);
                     });
                     
                     // Show level select by default
@@ -487,7 +614,6 @@
                     } else {
                         // No more levels, show level select
                         this.showLevelSelect = true;
-                        // Reset hasNextLevel dan nextLevelClicked
                         this.hasNextLevel = false;
                         this.nextLevelClicked = false;
                     }
@@ -513,10 +639,6 @@
                     if (resourceId) {
                         this.gameEngine.allocateResource(processId, resourceId);
                     }
-                },
-                
-                releaseResource(processId, resourceId) {
-                    this.gameEngine.deallocateResource(processId, resourceId);
                 },
                 
                 // Deadlock Handling
@@ -548,6 +670,23 @@
                     this.gameEngine.handleDeadlockWithRollback();
                 },
                 
+                showStrategyUnavailableMessage(strategy, customMessage = null) {
+                    const strategyNames = {
+                        'preemption': 'Preemption',
+                        'kill': 'Kill Process',
+                        'rollback': 'Rollback All'
+                    };
+                    
+                    this.strategyToastMessage = customMessage || 
+                        `${strategyNames[strategy]} strategy has already been used! Each strategy can only be used once per level.`;
+                    this.showStrategyToast = true;
+                    
+                    // Auto-hide toast after 5 seconds
+                    setTimeout(() => {
+                        this.showStrategyToast = false;
+                    }, 5000);
+                },
+                
                 // Helper Methods
                 getProcessNameById(processId) {
                     const process = this.gameState.processes.find(p => p.id === processId) || 
@@ -565,9 +704,9 @@
                 },
                 
                 getProcessesInDeadlock() {
-                    return this.gameState.processes.filter(p => 
-                        this.gameState.deadlockCycle.includes(p.id)
-                    );
+                    return this.gameState.processes.filter(p => {
+                        return this.gameState.deadlockCycle.includes(p.id);
+                    });
                 },
                 
                 formatTime(seconds) {
@@ -575,6 +714,19 @@
                     const mins = Math.floor(seconds / 60);
                     const secs = seconds % 60;
                     return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+                },
+                
+                formatResolutionMethod(method) {
+                    switch (method) {
+                        case 'preemption': 
+                            return 'Preemption (Force took resource)';
+                        case 'kill': 
+                            return 'Process Termination (Killed deadlocked process)';
+                        case 'rollback': 
+                            return 'Rollback (Reset all allocations)';
+                        default: 
+                            return method;
+                    }
                 },
                 
                 renderVisualization() {
