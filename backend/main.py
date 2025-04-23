@@ -45,5 +45,10 @@ def index():
 def game():
     return render_template('game.html')
 
+@app.route('/game/challenge')
+def game_challenge():
+    """Route untuk gameplay interaktif dengan level"""
+    return render_template('game-ui.html')
+
 if __name__ == '__main__':
     app.run(debug=True)

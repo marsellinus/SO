@@ -1,0 +1,131 @@
+/* Game UI Styling */
+#visualization {
+    background-color: rgba(0, 0, 0, 0.3);
+    position: relative;
+    overflow: hidden;
+}
+
+/* Process node styling */
+.process-node {
+    fill: #6366f1;
+    stroke: #4f46e5;
+    stroke-width: 2px;
+}
+
+.deadlock-process {
+    fill: #ef4444;
+    stroke: #dc2626;
+    stroke-width: 2px;
+}
+
+/* Resource node styling */
+.resource-node {
+    fill: #10b981;
+    stroke: #059669;
+    stroke-width: 2px;
+}
+
+/* Edge styling */
+.allocation-edge {
+    stroke: #f97316;
+    stroke-width: 2px;
+}
+
+.request-edge {
+    stroke: #8b5cf6;
+    stroke-width: 2px;
+    stroke-dasharray: 5,5;
+}
+
+.deadlock-edge {
+    stroke: #ef4444;
+    stroke-width: 3px;
+    animation: pulse 1.5s infinite;
+}
+
+/* Animation for deadlock highlighting */
+@keyframes pulse {
+    0% { opacity: 0.6; stroke-width: 2px; }
+    50% { opacity: 1; stroke-width: 4px; }
+    100% { opacity: 0.6; stroke-width: 2px; }
+}
+
+/* Drag and drop styling */
+[draggable=true] {
+    cursor: grab;
+}
+
+[draggable=true]:active {
+    cursor: grabbing;
+}
+
+/* Process completion animation */
+@keyframes complete {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.05); }
+    100% { transform: scale(1); }
+}
+
+.process-completed {
+    animation: complete 0.5s ease-in-out;
+}
+
+/* Timer warning animation */
+@keyframes timer-warning {
+    0% { color: #fcd34d; }
+    50% { color: #ef4444; }
+    100% { color: #fcd34d; }
+}
+
+.timer-warning {
+    animation: timer-warning 1s infinite;
+}
+
+/* Modal transitions */
+[x-show] {
+    transition: opacity 0.3s ease;
+}
+
+/* Resource icons styling */
+.resource-icon {
+    width: 24px;
+    height: 24px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+}
+
+/* Level progression indicator */
+.level-progress {
+    display: flex;
+    align-items: center;
+    margin-bottom: 1rem;
+}
+
+.level-progress-step {
+    width: 1rem;
+    height: 1rem;
+    border-radius: 50%;
+    background-color: rgba(255, 255, 255, 0.2);
+    margin-right: 0.5rem;
+}
+
+.level-progress-step.active {
+    background-color: #60a5fa;
+}
+
+.level-progress-step.completed {
+    background-color: #22c55e;
+}
+
+/* Score animation */
+@keyframes score-increase {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.2); }
+    100% { transform: scale(1); }
+}
+
+.score-animation {
+    animation: score-increase 0.5s ease-out;
+}

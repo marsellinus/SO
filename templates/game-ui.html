@@ -1,0 +1,593 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Deadlock Solver Game</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
+    <link rel="stylesheet" href="/static/css/game-ui.css">
+</head>
+<body class="bg-gradient-to-br from-indigo-900 to-purple-900 text-white min-h-screen" x-data="gameController()">
+    <div class="container mx-auto px-4 py-6">
+        <!-- Header Section -->
+        <header class="flex justify-between items-center mb-6">
+            <div>
+                <h1 class="text-3xl font-bold">🎮 Deadlock Solver</h1>
+                <p x-text="currentLevel?.title || 'Select a level'" class="text-lg"></p>
+            </div>
+            <div class="flex space-x-4 items-center">
+                <div class="bg-black/20 px-4 py-2 rounded-lg">
+                    <span class="font-bold">Score:</span> 
+                    <span x-text="gameState.score" class="text-yellow-300"></span>
+                </div>
+                <div class="bg-black/20 px-4 py-2 rounded-lg">
+                    <span class="font-bold">Time:</span> 
+                    <span x-text="formatTime(gameState.timer)" 
+                          :class="{'text-red-400': gameState.timer <= 30}" 
+                          class="text-green-300"></span>
+                </div>
+                <button @click="showLevelSelect = true" 
+                        class="bg-indigo-600 hover:bg-indigo-700 px-4 py-2 rounded-lg transition-colors">
+                    Level Select
+                </button>
+            </div>
+        </header>
+
+        <!-- Level Welcome Screen -->
+        <div x-show="showLevelIntro" class="fixed inset-0 bg-black/80 flex items-center justify-center z-50">
+            <div class="bg-gradient-to-br from-indigo-800 to-purple-800 p-8 rounded-xl max-w-2xl text-center">
+                <h2 class="text-3xl font-bold mb-4" x-text="currentLevel?.title"></h2>
+                <p class="mb-6 text-lg" x-text="currentLevel?.description"></p>
+                
+                <div class="bg-black/20 p-4 rounded-lg mb-6">
+                    <h3 class="font-bold text-xl mb-2">Objective</h3>
+                    <p x-text="currentLevel?.objective"></p>
+                </div>
+                
+                <div class="bg-black/20 p-4 rounded-lg mb-6" x-show="currentLevel?.tutorial.length > 0">
+                    <h3 class="font-bold text-xl mb-2">Tutorial</h3>
+                    <ul class="text-left space-y-2">
+                        <template x-for="tip in currentLevel?.tutorial" :key="tip">
+                            <li class="flex items-start">
+                                <span class="text-yellow-300 mr-2">▶</span>
+                                <span x-text="tip"></span>
+                            </li>
+                        </template>
+                    </ul>
+                </div>
+                
+                <button @click="startGame()" class="bg-green-500 hover:bg-green-600 px-6 py-3 rounded-lg text-xl font-bold transition-colors">
+                    Start Level
+                </button>
+            </div>
+        </div>
+
+        <!-- Level Select Screen -->
+        <div x-show="showLevelSelect" class="fixed inset-0 bg-black/80 flex items-center justify-center z-50">
+            <div class="bg-gradient-to-br from-indigo-800 to-purple-800 p-8 rounded-xl max-w-4xl w-full">
+                <h2 class="text-3xl font-bold mb-6 text-center">Select a Level</h2>
+                
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <template x-for="level in levels" :key="level.id">
+                        <div class="bg-black/20 p-4 rounded-lg cursor-pointer hover:bg-black/40 transition-colors"
+                             @click="selectLevel(level.id)">
+                            <h3 class="text-xl font-bold mb-2">Level <span x-text="level.id"></span></h3>
+                            <p class="text-sm mb-2" x-text="level.title"></p>
+                            <div class="flex items-center justify-between">
+                                <span class="text-xs text-yellow-300" x-text="level.objective"></span>
+                                <span class="text-xs bg-indigo-600 px-2 py-1 rounded">
+                                    <span x-text="formatTime(level.maxTime)"></span>
+                                </span>
+                            </div>
+                        </div>
+                    </template>
+                </div>
+                
+                <div class="flex justify-center mt-6">
+                    <button @click="showLevelSelect = false" 
+                            class="bg-gray-600 hover:bg-gray-700 px-4 py-2 rounded-lg transition-colors">
+                        Close
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Game Results Screen -->
+        <div x-show="gameState.status === 'completed' || gameState.status === 'failed'" 
+             class="fixed inset-0 bg-black/80 flex items-center justify-center z-50">
+            <div class="bg-gradient-to-br from-indigo-800 to-purple-800 p-8 rounded-xl max-w-md text-center">
+                <h2 class="text-3xl font-bold mb-4" x-text="gameState.status === 'completed' ? 'Level Complete!' : 'Level Failed!'"></h2>
+                
+                <div class="bg-black/20 p-6 rounded-lg mb-6 flex flex-col items-center">
+                    <div class="text-4xl font-bold mb-2 text-yellow-300" x-text="gameState.score"></div>
+                    <div class="text-lg">Points</div>
+                </div>
+                
+                <div class="flex justify-center space-x-4">
+                    <button @click="retryLevel()" 
+                            class="bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded-lg transition-colors">
+                        Try Again
+                    </button>
+                    <button @click="handleNextLevel()" 
+                            x-show="gameState.status === 'completed' && hasNextLevel"
+                            class="bg-green-600 hover:bg-green-700 px-4 py-2 rounded-lg transition-colors">
+                        Next Level
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Game Area -->
+        <div class="flex flex-col space-y-6" x-show="gameState.status === 'running'">
+            <!-- Game Objective -->
+            <div class="bg-black/20 p-4 rounded-lg">
+                <h2 class="font-bold text-xl mb-2">Objective</h2>
+                <p x-text="currentLevel?.objective"></p>
+            </div>
+            
+            <!-- Main Game Grid -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <!-- Process Panel -->
+                <div class="bg-black/20 p-4 rounded-lg col-span-1">
+                    <h2 class="font-bold text-xl mb-4">Processes</h2>
+                    <div class="space-y-3">
+                        <template x-for="process in gameState.processes" :key="process.id">
+                            <div class="bg-indigo-900/50 p-3 rounded-lg border border-indigo-700"
+                                 :class="{'border-yellow-400': isProcessInDeadlock(process.id)}"
+                                 @dragover.prevent
+                                 @drop.prevent="dropResourceOnProcess($event, process.id)">
+                                <div class="flex items-center justify-between">
+                                    <div class="flex items-center">
+                                        <span class="text-2xl mr-2" x-text="process.icon"></span>
+                                        <span x-text="process.name" class="font-medium"></span>
+                                    </div>
+                                    <button @click="killProcess(process.id)" 
+                                            class="text-xs bg-red-600 hover:bg-red-700 px-2 py-1 rounded"
+                                            x-show="gameState.deadlockOccurred && isProcessInDeadlock(process.id)">
+                                        Terminate
+                                    </button>
+                                </div>
+                                
+                                <!-- Resource Needs -->
+                                <div class="mt-2">
+                                    <div class="text-xs text-gray-300 mb-1">Needs:</div>
+                                    <div class="flex flex-wrap gap-1">
+                                        <template x-for="resourceId in process.needs" :key="resourceId">
+                                            <span class="text-xs bg-purple-800 px-2 py-1 rounded"
+                                                 :class="{'bg-green-700': process.allocation.includes(resourceId)}">
+                                                <span x-text="getResourceNameById(resourceId)"></span>
+                                            </span>
+                                        </template>
+                                    </div>
+                                </div>
+                                
+                                <!-- Allocated Resources -->
+                                <div class="mt-2" x-show="process.allocation.length > 0">
+                                    <div class="text-xs text-gray-300 mb-1">Allocated:</div>
+                                    <div class="flex flex-wrap gap-1">
+                                        <template x-for="resourceId in process.allocation" :key="resourceId">
+                                            <div class="text-xs bg-green-700 px-2 py-1 rounded flex items-center"
+                                                @click="releaseResource(process.id, resourceId)"
+                                                class="cursor-pointer hover:bg-green-800">
+                                                <span x-text="getResourceNameById(resourceId)"></span>
+                                                <span class="ml-1 text-xs">×</span>
+                                            </div>
+                                        </template>
+                                    </div>
+                                </div>
+                            </div>
+                        </template>
+                    </div>
+                    
+                    <!-- Completed Processes -->
+                    <div class="mt-4" x-show="gameState.completedProcesses.length > 0">
+                        <h3 class="font-bold text-lg mb-2">Completed</h3>
+                        <div class="space-y-2">
+                            <template x-for="process in gameState.completedProcesses" :key="process.id">
+                                <div class="bg-green-900/30 p-2 rounded flex items-center">
+                                    <span class="text-xl mr-2" x-text="process.icon"></span>
+                                    <span x-text="process.name"></span>
+                                    <span class="ml-auto text-green-400">✓</span>
+                                </div>
+                            </template>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Visualization Panel -->
+                <div class="bg-black/20 p-4 rounded-lg col-span-1">
+                    <h2 class="font-bold text-xl mb-4">Resource Allocation Graph</h2>
+                    <div class="h-80 border border-white/10 rounded-lg flex items-center justify-center" id="visualization">
+                        <div x-show="!gameState.deadlockOccurred && gameState.processes.length > 0" class="text-center">
+                            <p class="text-gray-400">Allocate resources to see the visualization</p>
+                            <button @click="checkDeadlock()" class="mt-4 bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded-lg">
+                                Check for Deadlock
+                            </button>
+                        </div>
+                        
+                        <div x-show="gameState.deadlockOccurred" class="text-center p-4">
+                            <div class="text-red-400 text-xl font-bold mb-2">⚠️ Deadlock Detected!</div>
+                            <p class="mb-4">There is a circular wait between processes:</p>
+                            <div class="bg-black/30 p-2 rounded-lg inline-block">
+                                <template x-for="(nodeId, idx) in gameState.deadlockCycle" :key="idx">
+                                    <span>
+                                        <span x-text="nodeId"></span>
+                                        <template x-if="idx < gameState.deadlockCycle.length - 1">
+                                            <span> → </span>
+                                        </template>
+                                    </span>
+                                </template>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Deadlock Actions -->
+                    <div class="mt-4" x-show="gameState.deadlockOccurred && !gameState.deadlockResolved">
+                        <h3 class="font-bold text-lg mb-2">Deadlock Resolution</h3>
+                        <p class="text-sm mb-2">Select a strategy to resolve the deadlock:</p>
+                        <div class="flex flex-wrap gap-2">
+                            <button @click="showPreemptionModal = true" 
+                                    class="bg-yellow-600 hover:bg-yellow-700 px-3 py-2 rounded text-sm">
+                                Preemption
+                            </button>
+                            <button @click="showKillModal = true" 
+                                    class="bg-red-600 hover:bg-red-700 px-3 py-2 rounded text-sm">
+                                Kill Process
+                            </button>
+                            <button @click="resolveDeadlockWithRollback()" 
+                                    class="bg-purple-600 hover:bg-purple-700 px-3 py-2 rounded text-sm">
+                                Rollback All
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- Deadlock Resolved Message -->
+                    <div class="mt-4" x-show="gameState.deadlockResolved">
+                        <div class="bg-green-900/30 p-3 rounded-lg">
+                            <div class="font-bold text-green-400 flex items-center">
+                                <span class="text-lg mr-2">✓</span> Deadlock Resolved
+                            </div>
+                            <p class="text-sm mt-1">Continue allocating resources to complete processes.</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Resource Panel -->
+                <div class="bg-black/20 p-4 rounded-lg col-span-1">
+                    <h2 class="font-bold text-xl mb-4">Resources</h2>
+                    <div class="space-y-3">
+                        <template x-for="resource in gameState.resources" :key="resource.id">
+                            <div class="bg-purple-900/50 p-3 rounded-lg">
+                                <div class="flex items-center justify-between">
+                                    <div class="flex items-center">
+                                        <span class="text-2xl mr-2" x-text="resource.icon"></span>
+                                        <span x-text="resource.name" class="font-medium"></span>
+                                    </div>
+                                    <div class="text-sm">
+                                        <span x-show="resource.held_by" class="text-yellow-400">In Use</span>
+                                        <span x-show="!resource.held_by" class="text-green-400">Available</span>
+                                    </div>
+                                </div>
+                                
+                                <!-- Resource Status -->
+                                <div class="mt-2">
+                                    <template x-if="resource.held_by">
+                                        <div class="text-sm">
+                                            <span>Held by: </span>
+                                            <span x-text="getProcessNameById(resource.held_by)" class="font-medium"></span>
+                                            <button @click="preemptResource(resource.held_by, resource.id)" 
+                                                    x-show="gameState.deadlockOccurred && isProcessInDeadlock(resource.held_by)"
+                                                    class="ml-2 text-xs bg-yellow-600 hover:bg-yellow-700 px-2 py-0.5 rounded">
+                                                Preempt
+                                            </button>
+                                        </div>
+                                    </template>
+                                    <template x-if="!resource.held_by">
+                                        <div class="flex mt-2">
+                                            <div class="text-sm bg-green-700 px-3 py-1.5 rounded-lg cursor-pointer hover:bg-green-800"
+                                                 draggable="true"
+                                                 @dragstart="dragResource($event, resource.id)">
+                                                Drag to allocate
+                                            </div>
+                                        </div>
+                                    </template>
+                                </div>
+                            </div>
+                        </template>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal for Preemption -->
+    <div x-show="showPreemptionModal" class="fixed inset-0 bg-black/80 flex items-center justify-center z-50">
+        <div class="bg-gradient-to-br from-indigo-800 to-purple-800 p-6 rounded-xl max-w-md">
+            <h2 class="text-xl font-bold mb-4">Select Resource to Preempt</h2>
+            <div class="space-y-2 max-h-60 overflow-y-auto mb-4">
+                <template x-for="process in getProcessesInDeadlock()" :key="process.id">
+                    <div class="bg-black/20 p-3 rounded-lg">
+                        <div class="font-medium mb-2" x-text="process.name"></div>
+                        <div class="text-sm">Allocated resources:</div>
+                        <div class="flex flex-wrap gap-1 mt-1">
+                            <template x-for="resourceId in process.allocation" :key="resourceId">
+                                <button @click="resolveDeadlockWithPreemption(process.id, resourceId)"
+                                        class="text-xs bg-yellow-600 hover:bg-yellow-700 px-2 py-1 rounded">
+                                    <span x-text="getResourceNameById(resourceId)"></span>
+                                </button>
+                            </template>
+                        </div>
+                    </div>
+                </template>
+            </div>
+            <div class="flex justify-end">
+                <button @click="showPreemptionModal = false" 
+                        class="bg-gray-600 hover:bg-gray-700 px-3 py-1.5 rounded">
+                    Cancel
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal for Kill Process -->
+    <div x-show="showKillModal" class="fixed inset-0 bg-black/80 flex items-center justify-center z-50">
+        <div class="bg-gradient-to-br from-indigo-800 to-purple-800 p-6 rounded-xl max-w-md">
+            <h2 class="text-xl font-bold mb-4">Select Process to Terminate</h2>
+            <div class="space-y-2 max-h-60 overflow-y-auto mb-4">
+                <template x-for="process in getProcessesInDeadlock()" :key="process.id">
+                    <button @click="resolveDeadlockWithKill(process.id)"
+                            class="w-full text-left bg-black/20 p-3 rounded-lg hover:bg-black/30">
+                        <div class="flex items-center">
+                            <span class="text-xl mr-2" x-text="process.icon"></span>
+                            <span x-text="process.name" class="font-medium"></span>
+                            <div class="ml-auto bg-red-600 hover:bg-red-700 px-2 py-1 rounded text-sm">
+                                Terminate
+                            </div>
+                        </div>
+                    </button>
+                </template>
+            </div>
+            <div class="flex justify-end">
+                <button @click="showKillModal = false" 
+                        class="bg-gray-600 hover:bg-gray-700 px-3 py-1.5 rounded">
+                    Cancel
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script src="/static/js/levels.js"></script>
+    <script src="/static/js/game-engine.js"></script>
+    <script src="/static/js/visualization.js"></script>
+    <script>
+        function gameController() {
+            return {
+                gameEngine: null,
+                levels: gameLevels,
+                currentLevel: null,
+                gameState: {
+                    processes: [],
+                    resources: [],
+                    completedProcesses: [],
+                    deadlockOccurred: false,
+                    deadlockResolved: false,
+                    deadlockCycle: [],
+                    score: 0,
+                    timer: 0,
+                    status: 'not_started'
+                },
+                showLevelSelect: false,
+                showLevelIntro: false,
+                showPreemptionModal: false,
+                showKillModal: false,
+                hasNextLevel: false,
+                nextLevelClicked: false,
+                
+                init() {
+                    // Initialize game engine
+                    this.gameEngine = new DeadlockGameEngine();
+                    
+                    // Register event listeners
+                    this.gameEngine.on('levelStarted', (data) => {
+                        this.updateStateFromEngine();
+                    });
+                    
+                    this.gameEngine.on('timerUpdated', (data) => {
+                        this.gameState.timer = data.timer;
+                    });
+                    
+                    this.gameEngine.on('resourceAllocated', (data) => {
+                        this.updateStateFromEngine();
+                        this.renderVisualization();
+                    });
+                    
+                    this.gameEngine.on('resourceDeallocated', (data) => {
+                        this.updateStateFromEngine();
+                        this.renderVisualization();
+                    });
+                    
+                    this.gameEngine.on('processCompleted', (data) => {
+                        this.updateStateFromEngine();
+                        this.renderVisualization();
+                    });
+                    
+                    this.gameEngine.on('deadlockDetected', (data) => {
+                        this.gameState.deadlockOccurred = true;
+                        this.gameState.deadlockCycle = data.cycle;
+                        this.renderVisualization();
+                    });
+                    
+                    this.gameEngine.on('deadlockResolved', (data) => {
+                        this.gameState.deadlockResolved = true;
+                        this.updateStateFromEngine();
+                        this.showPreemptionModal = false;
+                        this.showKillModal = false;
+                        this.renderVisualization();
+                    });
+                    
+                    this.gameEngine.on('gameEnded', (data) => {
+                        this.updateStateFromEngine();
+                        
+                        // Set hasNextLevel hanya jika level saat ini berhasil diselesaikan
+                        // dan level berikutnya tersedia
+                        if (data.status === 'completed') {
+                            const nextLevelId = this.currentLevel.id + 1;
+                            this.hasNextLevel = this.levels.some(level => level.id === nextLevelId);
+                        } else {
+                            this.hasNextLevel = false;
+                        }
+                    });
+                    
+                    // Show level select by default
+                    this.showLevelSelect = true;
+                },
+                
+                updateStateFromEngine() {
+                    // Copy state from engine to local
+                    this.gameState = { ...this.gameEngine.gameState };
+                },
+                
+                selectLevel(levelId) {
+                    this.currentLevel = getLevel(levelId);
+                    this.showLevelSelect = false;
+                    this.showLevelIntro = true;
+                },
+                
+                startGame() {
+                    if (this.currentLevel) {
+                        this.gameEngine.startLevel(this.currentLevel.id);
+                        this.updateStateFromEngine();
+                        this.showLevelIntro = false;
+                        setTimeout(() => this.renderVisualization(), 100);
+                    }
+                },
+                
+                retryLevel() {
+                    if (this.currentLevel) {
+                        this.gameEngine.startLevel(this.currentLevel.id);
+                        this.updateStateFromEngine();
+                    }
+                },
+                
+                nextLevel() {
+                    if (!this.hasNextLevel) return;
+                    
+                    const currentId = this.currentLevel.id;
+                    const nextId = currentId + 1;
+                    
+                    // Check if next level exists
+                    const nextLevel = getLevel(nextId);
+                    if (nextLevel) {
+                        this.selectLevel(nextId);
+                        this.showLevelIntro = true;
+                        // Reset hasNextLevel dan nextLevelClicked
+                        this.hasNextLevel = false;
+                        this.nextLevelClicked = false;
+                    } else {
+                        // No more levels, show level select
+                        this.showLevelSelect = true;
+                        // Reset hasNextLevel dan nextLevelClicked
+                        this.hasNextLevel = false;
+                        this.nextLevelClicked = false;
+                    }
+                },
+                
+                handleNextLevel() {
+                    // Tutup floating window dengan mengubah status
+                    this.gameState.status = 'not_started';
+                    
+                    // Beri sedikit waktu untuk animasi tutup
+                    setTimeout(() => {
+                        this.nextLevel();
+                    }, 100);
+                },
+                
+                // Resource Handling
+                dragResource(event, resourceId) {
+                    event.dataTransfer.setData("resourceId", resourceId);
+                },
+                
+                dropResourceOnProcess(event, processId) {
+                    const resourceId = event.dataTransfer.getData("resourceId");
+                    if (resourceId) {
+                        this.gameEngine.allocateResource(processId, resourceId);
+                    }
+                },
+                
+                releaseResource(processId, resourceId) {
+                    this.gameEngine.deallocateResource(processId, resourceId);
+                },
+                
+                // Deadlock Handling
+                checkDeadlock() {
+                    this.gameEngine.checkDeadlock();
+                },
+                
+                resolveDeadlockWithPreemption(processId, resourceId) {
+                    if (this.gameEngine.handleDeadlockWithPreemption(processId, resourceId)) {
+                        this.showPreemptionModal = false;
+                    }
+                },
+                
+                preemptResource(processId, resourceId) {
+                    this.gameEngine.handleDeadlockWithPreemption(processId, resourceId);
+                },
+                
+                resolveDeadlockWithKill(processId) {
+                    if (this.gameEngine.handleDeadlockWithKill(processId)) {
+                        this.showKillModal = false;
+                    }
+                },
+                
+                killProcess(processId) {
+                    this.gameEngine.handleDeadlockWithKill(processId);
+                },
+                
+                resolveDeadlockWithRollback() {
+                    this.gameEngine.handleDeadlockWithRollback();
+                },
+                
+                // Helper Methods
+                getProcessNameById(processId) {
+                    const process = this.gameState.processes.find(p => p.id === processId) || 
+                                   this.gameState.completedProcesses.find(p => p.id === processId);
+                    return process ? process.name : processId;
+                },
+                
+                getResourceNameById(resourceId) {
+                    const resource = this.gameState.resources.find(r => r.id === resourceId);
+                    return resource ? resource.name : resourceId;
+                },
+                
+                isProcessInDeadlock(processId) {
+                    return this.gameState.deadlockCycle.includes(processId);
+                },
+                
+                getProcessesInDeadlock() {
+                    return this.gameState.processes.filter(p => 
+                        this.gameState.deadlockCycle.includes(p.id)
+                    );
+                },
+                
+                formatTime(seconds) {
+                    if (seconds === undefined || seconds === null) return '00:00';
+                    const mins = Math.floor(seconds / 60);
+                    const secs = seconds % 60;
+                    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+                },
+                
+                renderVisualization() {
+                    if (window.renderResourceAllocationGraph) {
+                        window.renderResourceAllocationGraph(
+                            this.gameState.processes,
+                            this.gameState.resources,
+                            this.gameState.deadlockOccurred ? this.gameState.deadlockCycle : []
+                        );
+                    }
+                }
+            };
+        }
+    </script>
+</body>
+</html>
