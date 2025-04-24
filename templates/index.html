@@ -2,12 +2,26 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Deadlock Solver Game</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @media (max-width: 640px) {
+            .text-6xl {
+                font-size: 2.5rem;
+            }
+            .text-xl {
+                font-size: 1.1rem;
+            }
+            .py-4 {
+                padding-top: 0.75rem;
+                padding-bottom: 0.75rem;
+            }
+        }
+    </style>
 </head>
 <body class="bg-gradient-to-br from-purple-800 to-indigo-900 text-white min-h-screen flex flex-col items-center justify-center">
-    <div class="container mx-auto px-4 py-8 text-center">
+    <div class="container mx-auto px-4 py-4 md:py-8 text-center">
         <h1 class="text-6xl font-bold mb-4">🎮 Deadlock Solver</h1>
         <p class="text-xl mb-8">Pelajari konsep deadlock dalam sistem operasi melalui pendekatan interaktif</p>
         
@@ -24,11 +38,11 @@
             <p>Dalam aplikasi ini, kamu akan belajar cara mengidentifikasi dan menyelesaikan deadlock!</p>
         </div>
         
-        <div class="flex flex-col md:flex-row justify-center gap-6 mb-8">
-            <a href="/game" class="bg-gradient-to-r from-green-400 to-blue-500 hover:from-green-500 hover:to-blue-600 text-white font-bold py-4 px-8 rounded-full text-xl transition-all transform hover:scale-105">
+        <div class="flex flex-col md:flex-row justify-center gap-4 md:gap-6 mb-8">
+            <a href="/game" class="bg-gradient-to-r from-green-400 to-blue-500 hover:from-green-500 hover:to-blue-600 text-white font-bold py-3 md:py-4 px-6 md:px-8 rounded-full text-lg md:text-xl transition-all transform hover:scale-105 mb-3 md:mb-0">
                 Simulator Mode
             </a>
-            <a href="/game/challenge" class="bg-gradient-to-r from-yellow-400 to-red-500 hover:from-yellow-500 hover:to-red-600 text-white font-bold py-4 px-8 rounded-full text-xl transition-all transform hover:scale-105">
+            <a href="/game/challenge" class="bg-gradient-to-r from-yellow-400 to-red-500 hover:from-yellow-500 hover:to-red-600 text-white font-bold py-3 md:py-4 px-6 md:px-8 rounded-full text-lg md:text-xl transition-all transform hover:scale-105">
                 Game Challenge Mode
             </a>
         </div>

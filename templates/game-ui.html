@@ -2,37 +2,38 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Deadlock Solver Game</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
     <link rel="stylesheet" href="/static/css/game-ui.css">
+    <link rel="stylesheet" href="/static/css/game-mobile.css">
 </head>
 <body class="bg-gradient-to-br from-indigo-900 to-purple-900 text-white min-h-screen" x-data="gameController()">
     <div class="container mx-auto px-4 py-6">
         <!-- Header Section -->
-        <header class="flex justify-between items-center mb-6">
-            <div>
-                <h1 class="text-3xl font-bold">🎮 Deadlock Solver</h1>
+        <header class="flex flex-col md:flex-row justify-between items-center p-4 md:p-6">
+            <div class="mb-4 md:mb-0 text-center md:text-left">
+                <h1 class="text-2xl md:text-3xl font-bold">🎮 Deadlock Solver</h1>
                 <p x-text="currentLevel?.title || 'Select a level'" class="text-lg"></p>
             </div>
-            <div class="flex space-x-4 items-center">
-                <div class="bg-black/20 px-4 py-2 rounded-lg">
+            <div class="flex flex-wrap justify-center md:justify-end gap-2 md:gap-4 items-center">
+                <div class="bg-black/20 px-3 md:px-4 py-2 rounded-lg text-sm md:text-base">
                     <span class="font-bold">Score:</span> 
                     <span x-text="gameState.score" class="text-yellow-300"></span>
                 </div>
-                <div class="bg-black/20 px-4 py-2 rounded-lg">
+                <div class="bg-black/20 px-3 md:px-4 py-2 rounded-lg text-sm md:text-base">
                     <span class="font-bold">Time:</span> 
                     <span x-text="formatTime(gameState.timer)" 
                           :class="{'text-red-400': gameState.timer <= 30}" 
                           class="text-green-300"></span>
                 </div>
                 <button @click="showLevelSelect = true" 
-                        class="bg-indigo-600 hover:bg-indigo-700 px-4 py-2 rounded-lg transition-colors">
+                        class="bg-indigo-600 hover:bg-indigo-700 px-3 py-2 rounded-lg transition-colors text-sm md:text-base">
                     Level Select
                 </button>
                 <a href="/" 
-                   class="bg-red-600 hover:bg-red-700 px-4 py-2 rounded-lg transition-colors">
+                   class="bg-red-600 hover:bg-red-700 px-3 py-2 rounded-lg transition-colors text-sm md:text-base">
                     Exit Game
                 </a>
             </div>
@@ -123,17 +124,10 @@
         </div>
 
         <!-- Main Game Area -->
-        <div class="flex flex-col space-y-6" x-show="gameState.status === 'running'">
-            <!-- Game Objective -->
-            <div class="bg-black/20 p-4 rounded-lg">
-                <h2 class="font-bold text-xl mb-2">Objective</h2>
-                <p x-text="currentLevel?.objective"></p>
-            </div>
-            
-            <!-- Main Game Grid -->
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <!-- Process Panel -->
-                <div class="bg-black/20 p-4 rounded-lg col-span-1">
+        <main class="p-4 md:p-6">
+            <div x-show="!showLevelIntro && !showLevelSelect" class="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
+                <!-- Left Panel - Processes -->
+                <div class="bg-black/20 p-4 rounded-lg col-span-1 md:h-[calc(100vh-180px)] overflow-auto">
                     <h2 class="font-bold text-xl mb-4">Processes</h2>
                     <div class="space-y-3">
                         <template x-for="process in gameState.processes" :key="process.id">
@@ -166,7 +160,7 @@
                                     </div>
                                 </div>
                                 
-                                <!-- Allocated Resources (tanpa tombol X) -->
+                                <!-- Allocated Resources -->
                                 <div class="mt-2" x-show="process.allocation.length > 0">
                                     <div class="text-xs text-gray-300 mb-1">Allocated:</div>
                                     <div class="flex flex-wrap gap-1">
@@ -196,10 +190,10 @@
                     </div>
                 </div>
                 
-                <!-- Visualization Panel -->
-                <div class="bg-black/20 p-4 rounded-lg col-span-1">
+                <!-- Middle Panel - Visualization -->
+                <div class="bg-black/20 p-4 rounded-lg col-span-1 md:h-[calc(100vh-180px)] overflow-auto">
                     <h2 class="font-bold text-xl mb-4">Resource Allocation Graph</h2>
-                    <div class="h-80 border border-white/10 rounded-lg flex items-center justify-center" id="visualization">
+                    <div id="visualization-container" class="h-64 md:h-[calc(100vh-280px)] border border-indigo-800 rounded-lg bg-black/30">
                         <div x-show="!gameState.deadlockOccurred && gameState.processes.length > 0" class="text-center">
                             <p class="text-gray-400">Allocate resources to see the visualization</p>
                             <button @click="checkDeadlock()" class="mt-4 bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded-lg">
@@ -222,11 +216,69 @@
                             </div>
                         </div>
                     </div>
+                </div>
+                
+                <!-- Right Panel - Resources and Actions -->
+                <div class="col-span-1 md:h-[calc(100vh-180px)] overflow-auto space-y-4">
+                    <!-- Resources -->
+                    <div class="bg-black/20 p-4 rounded-lg">
+                        <h2 class="font-bold text-xl mb-4">Resources</h2>
+                        <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                            <template x-for="resource in gameState.resources" :key="resource.id">
+                                <div class="bg-purple-900/50 p-3 rounded-lg">
+                                    <div class="flex items-center justify-between">
+                                        <div class="flex items-center">
+                                            <span class="text-2xl mr-2" x-text="resource.icon"></span>
+                                            <span x-text="resource.name" class="font-medium"></span>
+                                        </div>
+                                        <div class="text-sm">
+                                            <span x-show="resource.held_by" class="text-yellow-400">In Use</span>
+                                            <span x-show="!resource.held_by" class="text-green-400">Available</span>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Resource Status -->
+                                    <div class="mt-2">
+                                        <template x-if="resource.held_by">
+                                            <div class="text-sm">
+                                                <span>Held by: </span>
+                                                <span x-text="getProcessNameById(resource.held_by)" class="font-medium"></span>
+                                                <button @click="preemptResource(resource.held_by, resource.id)" 
+                                                        x-show="gameState.deadlockOccurred && isProcessInDeadlock(resource.held_by)"
+                                                        class="ml-2 text-xs bg-yellow-600 hover:bg-yellow-700 px-2 py-0.5 rounded">
+                                                    Preempt
+                                                </button>
+                                            </div>
+                                        </template>
+                                        <template x-if="!resource.held_by">
+                                            <div class="flex mt-2">
+                                                <div class="text-sm bg-green-700 px-3 py-1.5 rounded-lg cursor-pointer hover:bg-green-800"
+                                                     draggable="true"
+                                                     @dragstart="dragResource($event, resource.id)">
+                                                    Drag to allocate
+                                                </div>
+                                            </div>
+                                        </template>
+                                    </div>
+                                </div>
+                            </template>
+                        </div>
+                    </div>
+                    
+                    <!-- Deadlock Warning -->
+                    <div class="bg-red-900/30 p-4 rounded-lg" x-show="gameState.deadlockOccurred && !gameState.deadlockResolved">
+                        <div class="flex items-center">
+                            <span class="text-2xl mr-2">⚠️</span>
+                            <h3 class="font-bold text-lg">Deadlock Detected!</h3>
+                        </div>
+                        <p class="text-sm mt-1">
+                            A circular wait has been detected between processes. Select a resolution strategy below.
+                        </p>
+                    </div>
                     
                     <!-- Deadlock Actions -->
-                    <div class="mt-4" x-show="gameState.deadlockOccurred">
+                    <div class="mt-4" x-show="gameState.deadlockOccurred && !gameState.deadlockResolved">
                         <div class="grid grid-cols-1 gap-3">
-                            <!-- Preemption Strategy -->
                             <div class="bg-black/20 p-3 rounded-lg hover:bg-black/30 cursor-pointer"
                                  :class="{'opacity-50 cursor-not-allowed': !gameState.availableStrategies.preemption}"
                                  @click="gameState.availableStrategies.preemption ? showPreemptionModal = true : showStrategyUnavailableMessage('preemption')">
@@ -245,7 +297,6 @@
                                 </div>
                             </div>
                             
-                            <!-- Kill Process Strategy -->
                             <div class="bg-black/20 p-3 rounded-lg hover:bg-black/30 cursor-pointer"
                                  :class="{'opacity-50 cursor-not-allowed': !gameState.availableStrategies.kill}"
                                  @click="gameState.availableStrategies.kill ? showKillModal = true : showStrategyUnavailableMessage('kill')">
@@ -264,7 +315,6 @@
                                 </div>
                             </div>
                             
-                            <!-- Rollback Strategy -->
                             <div class="bg-black/20 p-3 rounded-lg hover:bg-black/30 cursor-pointer"
                                  :class="{'opacity-50 cursor-not-allowed': !gameState.availableStrategies.rollback}"
                                  @click="gameState.availableStrategies.rollback ? resolveDeadlockWithRollback() : showStrategyUnavailableMessage('rollback')">
@@ -284,7 +334,6 @@
                             </div>
                         </div>
                         
-                        <!-- Help tip -->
                         <div class="mt-3 bg-blue-900/30 p-2 rounded-lg text-sm">
                             <p class="flex items-center">
                                 <span class="text-blue-300 mr-1">⚠️</span>
@@ -292,7 +341,7 @@
                             </p>
                         </div>
                     </div>
-
+                    
                     <!-- Deadlock Resolved Message -->
                     <div class="mt-4" x-show="gameState.deadlockResolved && !gameState.deadlockOccurred">
                         <div class="bg-green-900/30 p-3 rounded-lg">
@@ -307,8 +356,8 @@
                             </div>
                         </div>
                     </div>
-
-                    <!-- Available Strategies Display (even after deadlock is resolved) -->
+                    
+                    <!-- Remaining Strategies Display -->
                     <div class="mt-4" x-show="!gameState.deadlockOccurred">
                         <div class="bg-black/20 p-3 rounded-lg">
                             <h3 class="font-bold text-sm mb-2">Remaining Strategies</h3>
@@ -355,54 +404,24 @@
                             </p>
                         </div>
                     </div>
-                </div>
-                
-                <!-- Resource Panel -->
-                <div class="bg-black/20 p-4 rounded-lg col-span-1">
-                    <h2 class="font-bold text-xl mb-4">Resources</h2>
-                    <div class="space-y-3">
-                        <template x-for="resource in gameState.resources" :key="resource.id">
-                            <div class="bg-purple-900/50 p-3 rounded-lg">
-                                <div class="flex items-center justify-between">
-                                    <div class="flex items-center">
-                                        <span class="text-2xl mr-2" x-text="resource.icon"></span>
-                                        <span x-text="resource.name" class="font-medium"></span>
-                                    </div>
-                                    <div class="text-sm">
-                                        <span x-show="resource.held_by" class="text-yellow-400">In Use</span>
-                                        <span x-show="!resource.held_by" class="text-green-400">Available</span>
-                                    </div>
-                                </div>
-                                
-                                <!-- Resource Status -->
-                                <div class="mt-2">
-                                    <template x-if="resource.held_by">
-                                        <div class="text-sm">
-                                            <span>Held by: </span>
-                                            <span x-text="getProcessNameById(resource.held_by)" class="font-medium"></span>
-                                            <button @click="preemptResource(resource.held_by, resource.id)" 
-                                                    x-show="gameState.deadlockOccurred && isProcessInDeadlock(resource.held_by)"
-                                                    class="ml-2 text-xs bg-yellow-600 hover:bg-yellow-700 px-2 py-0.5 rounded">
-                                                Preempt
-                                            </button>
-                                        </div>
-                                    </template>
-                                    <template x-if="!resource.held_by">
-                                        <div class="flex mt-2">
-                                            <div class="text-sm bg-green-700 px-3 py-1.5 rounded-lg cursor-pointer hover:bg-green-800"
-                                                 draggable="true"
-                                                 @dragstart="dragResource($event, resource.id)">
-                                                Drag to allocate
-                                            </div>
-                                        </div>
-                                    </template>
-                                </div>
-                            </div>
-                        </template>
+                    
+                    <!-- Game Controls -->
+                    <div class="bg-black/20 p-4 rounded-lg">
+                        <h3 class="font-bold text-lg mb-2">Game Controls</h3>
+                        <div class="flex flex-wrap gap-2">
+                            <button @click="pauseGame()" 
+                                    class="bg-blue-700 hover:bg-blue-800 px-3 py-1 rounded-lg text-sm transition-colors">
+                                Pause
+                            </button>
+                            <button @click="restartLevel()" 
+                                    class="bg-orange-700 hover:bg-orange-800 px-3 py-1 rounded-lg text-sm transition-colors">
+                                Restart
+                            </button>
+                        </div>
                     </div>
                 </div>
             </div>
-        </div>
+        </main>
     </div>
 
     <!-- Modal for Preemption -->
@@ -495,6 +514,7 @@
                 nextLevelClicked: false,
                 lastDeadlockResolutionMethod: null,
                 lastDeadlockResolutionMessage: null,
+                isMobileDevice: false,
                 
                 init() {
                     // Initialize game engine
@@ -566,8 +586,37 @@
                         this.showStrategyUnavailableMessage(data.strategy, data.message);
                     });
                     
+                    // Detect mobile device
+                    this.isMobileDevice = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+                    
+                    // Initialize touch-friendly features if on mobile
+                    if (this.isMobileDevice) {
+                        this.$nextTick(() => {
+                            this.initMobileFeatures();
+                        });
+                    }
+                    
                     // Show level select by default
                     this.showLevelSelect = true;
+                },
+                
+                initMobileFeatures() {
+                    // Add touch-specific event listeners and UI adjustments
+                    const processContainers = document.querySelectorAll('.process-container');
+                    processContainers.forEach(container => {
+                        container.addEventListener('resource-dropped', (event) => {
+                            const { resourceId, targetId } = event.detail;
+                            this.allocateResource(resourceId, targetId);
+                        });
+                    });
+                    
+                    // Adjust visualization size for mobile
+                    const vizContainer = document.getElementById('visualization-container');
+                    if (vizContainer) {
+                        if (window.innerWidth < 768) { // Mobile view
+                            vizContainer.style.height = '250px';
+                        }
+                    }
                 },
                 
                 updateStateFromEngine() {
@@ -631,6 +680,8 @@
                 
                 // Resource Handling
                 dragResource(event, resourceId) {
+                    if (this.isMobileDevice) return; // Mobile uses touch events instead
+                    
                     event.dataTransfer.setData("resourceId", resourceId);
                 },
                 

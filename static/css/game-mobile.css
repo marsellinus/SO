@@ -1,0 +1,70 @@
+/* Mobile-specific styles */
+
+/* Touch-friendly buttons */
+button, a.button {
+    min-height: 44px;
+}
+
+/* Prevent zoom on input focus on iOS */
+input, select, textarea {
+    font-size: 16px;
+}
+
+/* Better drag and drop for touch devices */
+.draggable-resource {
+    touch-action: none; /* Prevents scrolling while dragging on touch screens */
+}
+
+/* Responsive visualization */
+#visualization-container {
+    max-height: 50vh;
+}
+
+/* Modal adjustments for mobile */
+.modal-content {
+    width: calc(100% - 32px);
+    max-width: 500px; 
+    max-height: 85vh;
+    overflow-y: auto;
+}
+
+/* Improve tap targets */
+.process-item, .resource-item {
+    min-height: 50px;
+}
+
+/* Strategy buttons for mobile */
+@media (max-width: 640px) {
+    .strategy-button {
+        width: 100%;
+        margin-bottom: 8px;
+        padding: 12px;
+    }
+    
+    /* Stack labels and badges */
+    .strategy-info {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    
+    /* Smaller text on mobile */
+    .text-xs {
+        font-size: 0.65rem;
+    }
+    
+    /* Smaller help icons */
+    .help-icon {
+        font-size: 1rem;
+    }
+}
+
+/* Improve scrolling on mobile */
+.overflow-auto {
+    -webkit-overflow-scrolling: touch; /* Smoother scrolling on iOS */
+    scrollbar-width: thin;
+}
+
+/* Prevent accidental zooming */
+* {
+    touch-action: manipulation;
+}
