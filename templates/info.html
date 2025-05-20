@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Deadlock Solver - Informasi</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gradient-to-br from-slate-900 to-purple-900 text-white min-h-screen p-4 md:p-8">
+    <div class="container mx-auto max-w-4xl">
+        <!-- Header -->
+        <header class="mb-8 text-center">
+            <h1 class="text-4xl font-bold mb-2">Deadlock Solver</h1>
+            <p class="text-lg text-gray-300">Panduan Penggunaan dan Informasi</p>
+            
+            <div class="flex justify-center mt-6 gap-4">
+                <a href="/" class="bg-blue-600 hover:bg-blue-700 px-5 py-2 rounded-lg transition-colors">
+                    Beranda
+                </a>
+                <a href="/game" class="bg-green-600 hover:bg-green-700 px-5 py-2 rounded-lg transition-colors">
+                    Simulator
+                </a>
+                <a href="/game/challenge" class="bg-purple-600 hover:bg-purple-700 px-5 py-2 rounded-lg transition-colors">
+                    Challenge Mode
+                </a>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <main class="space-y-8">
+            <!-- Tentang Deadlock -->
+            <section class="bg-black/30 p-6 rounded-xl">
+                <h2 class="text-2xl font-bold mb-4">Apa itu Deadlock?</h2>
+                <p class="mb-4">
+                    <strong>Deadlock</strong> adalah keadaan dalam sistem operasi di mana dua atau lebih proses saling menunggu 
+                    satu sama lain untuk melepaskan resource yang mereka butuhkan untuk melanjutkan operasi. 
+                    Akibatnya, tidak ada proses yang dapat melanjutkan eksekusi (terjebak dalam kondisi menunggu selamanya).
+                </p>
+                
+                <div class="bg-black/20 p-4 rounded-lg mb-4">
+                    <h3 class="font-bold text-lg mb-2">Empat Kondisi yang Menyebabkan Deadlock:</h3>
+                    <ol class="list-decimal ml-6 space-y-2">
+                        <li>
+                            <strong>Mutual Exclusion:</strong> Setidaknya satu resource dalam keadaan tidak dapat dibagi (hanya dapat digunakan oleh satu proses pada suatu waktu).
+                        </li>
+                        <li>
+                            <strong>Hold and Wait:</strong> Proses-proses sudah memegang setidaknya satu resource dan menunggu resource tambahan yang sedang dipegang oleh proses lain.
+                        </li>
+                        <li>
+                            <strong>No Preemption:</strong> Resource hanya dapat dilepaskan secara sukarela oleh proses yang memegangnya, tidak dapat diambil paksa.
+                        </li>
+                        <li>
+                            <strong>Circular Wait:</strong> Terdapat siklus tertutup dimana tiap proses menunggu resource yang dipegang oleh proses berikutnya dalam siklus.
+                        </li>
+                    </ol>
+                </div>
+            </section>
+
+            <!-- Simulator -->
+            <section class="bg-black/30 p-6 rounded-xl">
+                <h2 class="text-2xl font-bold mb-4">Simulator Deadlock</h2>
+                <p class="mb-4">
+                    Simulator Deadlock memungkinkan Anda untuk membuat, mengalokasikan, dan mengatur resource antar proses 
+                    untuk memahami bagaimana deadlock terjadi dan cara mengatasinya.
+                </p>
+                
+                <div class="bg-black/20 p-4 rounded-lg mb-4">
+                    <h3 class="font-bold text-lg mb-2">Cara Menggunakan Simulator:</h3>
+                    <ol class="list-decimal ml-6 space-y-2">
+                        <li>
+                            <strong>Buat Proses:</strong> Tambahkan proses baru dengan nama, icon, dan resource yang dibutuhkan.
+                        </li>
+                        <li>
+                            <strong>Buat Resource:</strong> Tambahkan resource baru yang dapat dialokasikan ke proses.
+                        </li>
+                        <li>
+                            <strong>Alokasikan Resource:</strong> Seret resource ke proses untuk mengalokasikannya.
+                        </li>
+                        <li>
+                            <strong>Deteksi Deadlock:</strong> Simulator akan otomatis mendeteksi jika terjadi deadlock.
+                        </li>
+                        <li>
+                            <strong>Resolusi Deadlock:</strong> Coba berbagai strategi untuk menyelesaikan deadlock yang terdeteksi.
+                        </li>
+                    </ol>
+                </div>
+                
+                <h3 class="font-bold text-lg mb-2">Strategi Penyelesaian Deadlock:</h3>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div class="bg-black/20 p-4 rounded-lg">
+                        <div class="flex items-center mb-2">
+                            <div class="bg-yellow-600 p-2 rounded-full mr-2">⚡</div>
+                            <h4 class="font-bold">Preemption</h4>
+                        </div>
+                        <p class="text-sm">Mengambil paksa resource dari suatu proses dan menyerahkannya ke proses lain.</p>
+                    </div>
+                    
+                    <div class="bg-black/20 p-4 rounded-lg">
+                        <div class="flex items-center mb-2">
+                            <div class="bg-red-600 p-2 rounded-full mr-2">✖</div>
+                            <h4 class="font-bold">Kill Process</h4>
+                        </div>
+                        <p class="text-sm">Mengakhiri satu atau lebih proses yang terlibat dalam deadlock.</p>
+                    </div>
+                    
+                    <div class="bg-black/20 p-4 rounded-lg">
+                        <div class="flex items-center mb-2">
+                            <div class="bg-purple-600 p-2 rounded-full mr-2">↩</div>
+                            <h4 class="font-bold">Rollback</h4>
+                        </div>
+                        <p class="text-sm">Mengembalikan semua alokasi resource ke keadaan awal yang aman.</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Challenge Mode -->
+            <section class="bg-black/30 p-6 rounded-xl">
+                <h2 class="text-2xl font-bold mb-4">Challenge Mode</h2>
+                <p class="mb-4">
+                    Challenge Mode adalah mode permainan di mana Anda harus menyelesaikan level-level dengan 
+                    tantangan yang semakin meningkat terkait alokasi resource dan penanganan deadlock.
+                </p>
+                
+                <div class="bg-black/20 p-4 rounded-lg mb-4">
+                    <h3 class="font-bold text-lg mb-2">Fitur Challenge Mode:</h3>
+                    <ul class="list-disc ml-6 space-y-2">
+                        <li>
+                            <strong>Multiple Levels:</strong> Tiga level dengan kesulitan bertingkat.
+                        </li>
+                        <li>
+                            <strong>Sistem Skor:</strong> Dapatkan skor berdasarkan performa Anda.
+                        </li>
+                        <li>
+                            <strong>Star Rating:</strong> Peroleh 1-3 bintang berdasarkan skor Anda.
+                        </li>
+                        <li>
+                            <strong>Penggunaan Strategi Terbatas:</strong> Setiap strategi penyelesaian deadlock hanya dapat digunakan sekali per level.
+                        </li>
+                        <li>
+                            <strong>Batasan Waktu:</strong> Selesaikan level dalam waktu tertentu.
+                        </li>
+                    </ul>
+                </div>
+                
+                <h3 class="font-bold text-lg mb-2">Tips untuk Challenge Mode:</h3>
+                <ul class="list-disc ml-6 space-y-1">
+                    <li>Perhatikan kebutuhan resource dari setiap proses sebelum mengalokasikan.</li>
+                    <li>Hindari alokasi yang dapat menyebabkan circular wait.</li>
+                    <li>Gunakan strategi penyelesaian deadlock hanya jika benar-benar diperlukan.</li>
+                    <li>Untuk skor terbaik, selesaikan level dengan cepat dan seminimal mungkin menggunakan strategi penyelesaian.</li>
+                </ul>
+            </section>
+
+            <!-- Resource Allocation Graph -->
+            <section class="bg-black/30 p-6 rounded-xl">
+                <h2 class="text-2xl font-bold mb-4">Resource Allocation Graph</h2>
+                <p class="mb-4">
+                    Resource Allocation Graph (RAG) adalah representasi visual dari hubungan antara proses dan resource.
+                    Ini membantu dalam mengidentifikasi dan memahami kondisi deadlock.
+                </p>
+                
+                <div class="bg-black/20 p-4 rounded-lg mb-4">
+                    <h3 class="font-bold text-lg mb-2">Komponen Graph:</h3>
+                    <ul class="space-y-3">
+                        <li class="flex items-center">
+                            <div class="w-6 h-6 rounded-full bg-blue-500 mr-3"></div>
+                            <span><strong>Lingkaran (Biru):</strong> Mewakili proses dalam sistem.</span>
+                        </li>
+                        <li class="flex items-center">
+                            <div class="w-6 h-6 bg-green-500 mr-3"></div>
+                            <span><strong>Kotak (Hijau):</strong> Mewakili resource dalam sistem.</span>
+                        </li>
+                        <li class="flex items-center">
+                            <svg class="w-24 h-6 mr-3" viewBox="0 0 100 20">
+                                <line x1="0" y1="10" x2="90" y2="10" stroke="#f97316" stroke-width="2"></line>
+                                <polygon points="90,10 80,5 80,15" fill="#f97316"></polygon>
+                            </svg>
+                            <span><strong>Garis Lurus (Oranye):</strong> Resource dialokasikan ke proses.</span>
+                        </li>
+                        <li class="flex items-center">
+                            <svg class="w-24 h-6 mr-3" viewBox="0 0 100 20">
+                                <line x1="0" y1="10" x2="90" y2="10" stroke="#8b5cf6" stroke-width="2" stroke-dasharray="5,5"></line>
+                                <polygon points="90,10 80,5 80,15" fill="#8b5cf6"></polygon>
+                            </svg>
+                            <span><strong>Garis Putus-putus (Ungu):</strong> Proses meminta resource.</span>
+                        </li>
+                        <li class="flex items-center">
+                            <div class="w-6 h-6 rounded-full bg-red-500 mr-3"></div>
+                            <span><strong>Warna Merah:</strong> Mengindikasikan komponen yang terlibat dalam deadlock.</span>
+                        </li>
+                    </ul>
+                </div>
+                
+                <p class="text-sm bg-black/20 p-3 rounded-lg">
+                    <strong>Catatan:</strong> Deadlock terdeteksi ketika terdapat siklus dalam graph dimana edge request dan 
+                    edge alokasi membentuk rantai tertutup, mengindikasikan adanya circular wait.
+                </p>
+            </section>
+        </main>
+
+        <!-- Footer -->
+        <footer class="mt-12 pt-4 border-t border-white/10 text-center text-gray-400 text-sm">
+            <p>Deadlock Solver &copy; 2023 - Belajar Sistem Operasi dengan Cara Interaktif</p>
+        </footer>
+    </div>
+</body>
+</html>

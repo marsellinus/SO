@@ -568,7 +568,7 @@ def solve_deadlock(data, strategy):
             "valid_strategies": ["Prevention", "Avoidance", "Detection"]
         }
 
-def generate_random_scenario(num_processes, num_resources, num_cores):
+def generate_random_scenario(num_processes, num_resources, num_cores=2):
     """
     Generate a random multi-core scenario dengan parameter yang diberikan
     """
@@ -644,6 +644,34 @@ def generate_random_scenario(num_processes, num_resources, num_cores):
     for i in range(num_processes):
         need.append([max_need[i][j] - allocation[i][j] for j in range(num_resources)])
     
+    # Tambahkan informasi edukasi tentang kondisi deadlock
+    deadlock_explanation = """
+    Perhatikan skenario ini dan coba identifikasi:
+    
+    1. Mutual Exclusion: Setiap resource hanya bisa digunakan oleh satu proses pada satu waktu
+    2. Hold & Wait: Proses memegang resource sambil menunggu resource lain
+    3. No Preemption: Resource hanya bisa dilepas secara sukarela oleh proses
+    4. Circular Wait: Ada siklus proses yang saling menunggu resource
+    
+    Jika keempat kondisi terpenuhi, deadlock dapat terjadi!
+    """
+    
+    process_descriptions = []
+    for i, p in enumerate(processes):
+        held_resources = [f"{resources[r]} ({allocation[i][r]})" for r in range(num_resources) if allocation[i][r] > 0]
+        needed_resources = [f"{resources[r]} ({need[i][r]})" for r in range(num_resources) if need[i][r] > 0]
+        
+        desc = f"{p} pada {process_core_mapping[p]}: "
+        if held_resources:
+            desc += f"memegang {', '.join(held_resources)}"
+        else:
+            desc += "tidak memegang resource"
+            
+        if needed_resources:
+            desc += f" dan butuh {', '.join(needed_resources)}"
+        
+        process_descriptions.append(desc)
+    
     return {
         "processes": processes,
         "resources": resources,
@@ -654,5 +682,9 @@ def generate_random_scenario(num_processes, num_resources, num_cores):
         "need": need,
         "available": available,
         "total_resources": {res: sum(allocation[p][i] for p in range(num_processes)) + available[i] 
-                            for i, res in enumerate(resources)}
+                            for i, res in enumerate(resources)},
+        "educational": {
+            "explanation": deadlock_explanation.strip(),
+            "process_descriptions": process_descriptions
+        }
     }

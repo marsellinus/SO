@@ -3,1239 +3,456 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Deadlock Solver - Game</title>
+    <title>Deadlock Simulator</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
+    <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
     <link rel="stylesheet" href="/static/css/game.css">
 </head>
-<body class="bg-gradient-to-r from-purple-600 to-indigo-700 text-white min-h-screen p-6"
-      x-data="gameData()">
-    <header class="container mx-auto">
-        <div class="flex justify-between items-center">
-            <h1 class="text-4xl font-bold">🎮 Deadlock Resolver</h1>
-            <div>
-                <a href="/" class="bg-gray-600 hover:bg-gray-700 px-3 py-2 rounded-lg text-sm mr-2">Home</a>
-                <a href="/game/challenge" class="bg-yellow-500 hover:bg-yellow-600 px-3 py-2 rounded-lg text-sm">Challenge Mode</a>
+<body class="bg-gradient-to-br from-slate-900 to-purple-900 text-white min-h-screen">
+    <div x-data="simulationController()" class="container mx-auto p-4" id="simulation-area">
+        <!-- Header -->
+        <header class="flex flex-col md:flex-row justify-between items-center mb-6">
+            <div class="mb-4 md:mb-0">
+                <h1 class="text-3xl font-bold">🔄 Deadlock Simulator</h1>
+                <p class="text-gray-300">Learn about resource allocation and deadlock management</p>
             </div>
-        </div>
-        <p class="text-center mt-2">Hadapi kondisi deadlock dan pilih strategi terbaik untuk menyelesaikannya</p>
-    </header>
-    
-    <main class="container mx-auto mt-8">
-        <div class="bg-white/10 backdrop-blur-sm rounded-xl p-6">
-            <!-- Setup Panel -->
-            <div class="mb-8" x-show="!simulationStarted">
-                <h2 class="text-2xl font-bold mb-4">Setup Skenario</h2>
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <!-- Manual Input -->
-                    <div class="bg-black/20 p-4 rounded-lg">
-                        <h3 class="font-bold mb-4">Input Manual</h3>
-                        
-                        <div class="space-y-4">
-                            <div>
-                                <label class="block mb-1">Jumlah Proses</label>
-                                <input type="number" x-model="setupConfig.processes" min="2" max="10" 
-                                       class="bg-white/10 border border-white/20 rounded px-3 py-2 w-full text-white">
+            
+            <div class="flex flex-wrap gap-2">
+                <button @click="toggleRealtimeEdu()" 
+                        :class="{'bg-teal-700': showRealtimeEdu, 'bg-teal-900': !showRealtimeEdu}"
+                        class="px-4 py-2 rounded-lg transition-colors flex items-center">
+                    <span x-text="showRealtimeEdu ? 'Hide Guidance' : 'Show Guidance'"></span>
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 ml-1" viewBox="0 0 20 20" fill="currentColor">
+                        <path d="M10.394 2.08a1 1 0 00-.788 0l-7 3a1 1 0 000 1.84L5.25 8.051a.999.999 0 01.356-.257l4-1.714a1 1 0 11.788 1.838l-2.727 1.168 1.94.831a1 1 0 00.787 0l7-3a1 1 0 000-1.838l-7-3zM3.31 9.397a1 1 0 011.354-.4L9.793 12.1a1 1 0 01.431 0A.999.999 0 0010 12a.999.999 0 00-.217-.212l-5-3a1 1 0 00-1.472 1.21L5 12.92v3.584a1 1 0 001.553.833l3.622-2.414a1 1 0 00.394-1.192 2.502 2.502 0 01-.273-.377l-3.292-5.482a1 1 0 111.732-.998l3.292 5.482a2.552 2.552 0 01-.273.372 1 1 0 00.394 1.198l3.622 2.414a1 1 0 001.553-.833V9.239L10 6.416a1 1 0 00-1.316-.082l-2.743 1.643a1 1 0 01-1.19-.19A1 1 0 004 7a1 1 0 00-1 1v2.667a1 1 0 01-.5.866l-1.69.996z" />
+                    </svg>
+                </button>
+                <button @click="generateRandomScenario()" class="bg-green-600 hover:bg-green-700 px-4 py-2 rounded-lg transition-colors flex items-center">
+                    Generate Random
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 ml-1" viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd" d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.601 2.566 1 1 0 11-1.885.666A5.002 5.002 0 005.999 7H9a1 1 0 010 2H4a1 1 0 01-1-1V3a1 1 0 011-1zm.008 9.057a1 1 0 011.276.61A5.002 5.002 0 0014.001 13H11a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0v-2.101a7.002 7.002 0 01-11.601-2.566 1 1 0 01.61-1.276z" clip-rule="evenodd" />
+                    </svg>
+                </button>
+                <button @click="resetSimulation()" class="bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded-lg transition-colors">
+                    Reset
+                </button>
+                <a href="/" class="bg-red-600 hover:bg-red-700 px-4 py-2 rounded-lg transition-colors">
+                    Exit
+                </a>
+            </div>
+        </header>
+
+        <!-- Main Layout -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <!-- Left Column: Process Management -->
+            <div class="space-y-4">
+                <div class="bg-black/30 p-4 rounded-xl">
+                    <h2 class="text-xl font-bold mb-4">Process Management</h2>
+                    
+                    <!-- Process Creation -->
+                    <div class="mb-4">
+                        <h3 class="font-semibold mb-2">Create New Process</h3>
+                        <div class="bg-black/20 p-3 rounded-lg mb-2">
+                            <div class="flex flex-wrap gap-2 mb-2">
+                                <div>
+                                    <label class="block text-xs mb-1">Name</label>
+                                    <input x-model="newProcess.name" type="text" class="bg-black/30 text-white p-1 rounded w-full" placeholder="Process Name">
+                                </div>
+                                <div>
+                                    <label class="block text-xs mb-1">Icon</label>
+                                    <select x-model="newProcess.icon" class="bg-black/30 text-white p-1 rounded">
+                                        <option value="📊">📊 Chart</option>
+                                        <option value="🖥️">🖥️ Computer</option>
+                                        <option value="📱">📱 Mobile</option>
+                                        <option value="🎬">🎬 Video</option>
+                                        <option value="🎮">🎮 Game</option>
+                                        <option value="📝">📝 Document</option>
+                                    </select>
+                                </div>
                             </div>
                             
-                            <div>
-                                <label class="block mb-1">Jumlah Tipe Resource</label>
-                                <input type="number" x-model="setupConfig.resources" min="1" max="5" 
-                                       class="bg-white/10 border border-white/20 rounded px-3 py-2 w-full text-white">
+                            <div class="mb-2">
+                                <label class="block text-xs mb-1">Required Resources</label>
+                                <div class="flex flex-wrap gap-2">
+                                    <template x-for="res in resources" :key="res.id">
+                                        <div class="flex items-center">
+                                            <input type="checkbox" :id="'need-'+res.id" :value="res.id" x-model="newProcess.needs" class="mr-1">
+                                            <label :for="'need-'+res.id" class="text-sm" x-text="res.name"></label>
+                                        </div>
+                                    </template>
+                                </div>
                             </div>
                             
-                            <div>
-                                <label class="block mb-1">Jumlah Core CPU</label>
-                                <input type="number" x-model="setupConfig.cores" min="1" max="4" 
-                                       class="bg-white/10 border border-white/20 rounded px-3 py-2 w-full text-white">
-                            </div>
-                            
-                            <div class="flex justify-between">
-                                <button @click="generateRandomScenario()" 
-                                        class="bg-green-500 hover:bg-green-600 py-2 px-4 rounded-lg transition-colors">
-                                    Generate Random
-                                </button>
-                                <button @click="manualSetup()" 
-                                        class="bg-blue-500 hover:bg-blue-600 py-2 px-4 rounded-lg transition-colors">
-                                    Setup Manual
-                                </button>
-                            </div>
+                            <button @click="addProcess()" class="bg-green-600 hover:bg-green-700 px-3 py-1 rounded-lg text-sm w-full">
+                                Add Process
+                            </button>
                         </div>
                     </div>
                     
-                    <!-- Manual Process Setup (shown if manualSetupActive is true) -->
-                    <div class="bg-black/20 p-4 rounded-lg" x-show="manualSetupActive">
-                        <h3 class="font-bold mb-4">Setup Proses Manual</h3>
-                        
-                        <div class="space-y-4 max-h-80 overflow-y-auto">
-                            <template x-for="(process, index) in manualProcesses" :key="index">
-                                <div class="bg-black/10 p-3 rounded">
-                                    <h4 class="font-bold" x-text="`Proses ${process.name}`"></h4>
-                                    
-                                    <div class="mt-2">
-                                        <label class="block mb-1">Core</label>
-                                        <select x-model="process.core" class="bg-white/10 border border-white/20 rounded px-3 py-1 w-full">
-                                            <template x-for="core in setupConfig.coreNames" :key="core">
-                                                <option x-text="core"></option>
-                                            </template>
-                                        </select>
+                    <!-- Random Generator Panel -->
+                    <div class="mb-4">
+                        <h3 class="font-semibold mb-2">Random Scenario Generator</h3>
+                        <div class="bg-black/20 p-3 rounded-lg mb-2">
+                            <div class="flex flex-wrap gap-3 mb-2">
+                                <div>
+                                    <label class="block text-xs mb-1">Number of Processes</label>
+                                    <input x-model.number="randomGenParams.numProcesses" type="number" min="2" max="6" class="bg-black/30 text-white p-1 rounded w-16">
+                                </div>
+                                <div>
+                                    <label class="block text-xs mb-1">Number of Resources</label>
+                                    <input x-model.number="randomGenParams.numResources" type="number" min="2" max="6" class="bg-black/30 text-white p-1 rounded w-16">
+                                </div>
+                            </div>
+                            
+                            <button @click="generateRandomScenario()" class="bg-purple-600 hover:bg-purple-700 px-3 py-1 rounded-lg text-sm w-full flex items-center justify-center">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" viewBox="0 0 20 20" fill="currentColor">
+                                    <path fill-rule="evenodd" d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.601 2.566 1 1 0 11-1.885.666A5.002 5.002 0 005.999 7H9a1 1 0 010 2H4a1 1 0 01-1-1V3a1 1 0 011-1zm.008 9.057a1 1 0 011.276.61A5.002 5.002 0 0014.001 13H11a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0v-2.101a7.002 7.002 0 01-11.601-2.566 1 1 0 01.61-1.276z" clip-rule="evenodd" />
+                                </svg>
+                                Generate Random Scenario
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- Process List -->
+                    <h3 class="font-semibold mb-2">Active Processes</h3>
+                    <div class="space-y-2 max-h-[400px] overflow-y-auto">
+                        <template x-for="(process, index) in processes" :key="process.id">
+                            <div 
+                                :class="{'border-red-500': deadlockProcesses.includes(process.id), 'border-indigo-700': !deadlockProcesses.includes(process.id)}"
+                                class="bg-indigo-900/50 p-3 rounded-lg border"
+                                :data-process-id="process.id"
+                                @dragover.prevent
+                                @drop="dropResourceOnProcess($event, process.id)"
+                            >
+                                <div class="flex justify-between">
+                                    <div class="flex items-center">
+                                        <span class="text-xl mr-2" x-text="process.icon"></span>
+                                        <span x-text="process.name"></span>
                                     </div>
-                                    
-                                    <div class="mt-2">
-                                        <label class="block mb-1">Alokasi & Kebutuhan Resource</label>
-                                        <div class="space-y-2">
-                                            <template x-for="(res, rIndex) in setupConfig.resourceNames" :key="rIndex">
-                                                <div class="flex items-center gap-2">
-                                                    <span x-text="res" class="w-10"></span>
-                                                    <div class="flex-1">
-                                                        <label class="text-xs">Alokasi</label>
-                                                        <input type="number" x-model="process.allocation[rIndex]" min="0" max="5" 
-                                                               class="bg-white/10 border border-white/20 rounded px-2 py-1 w-full text-sm">
-                                                    </div>
-                                                    <div class="flex-1">
-                                                        <label class="text-xs">Max</label>
-                                                        <input type="number" x-model="process.max[rIndex]" min="0" max="10" 
-                                                               class="bg-white/10 border border-white/20 rounded px-2 py-1 w-full text-sm">
-                                                    </div>
-                                                </div>
-                                            </template>
-                                        </div>
+                                    <button @click="removeProcess(index)" class="text-red-400 hover:text-red-300">
+                                        ✖
+                                    </button>
+                                </div>
+                                
+                                <!-- Resource Needs -->
+                                <div class="mt-2">
+                                    <div class="text-xs text-gray-400">Needs:</div>
+                                    <div class="flex flex-wrap gap-1 mt-1">
+                                        <template x-for="(resourceId, idx) in process.needs" :key="idx">
+                                            <span 
+                                                class="text-xs px-2 py-1 rounded-md"
+                                                :class="process.allocation.includes(resourceId) ? 'bg-green-700' : 'bg-purple-900'"
+                                            >
+                                                <span x-text="getResourceName(resourceId)"></span>
+                                            </span>
+                                        </template>
                                     </div>
                                 </div>
-                            </template>
-                            
-                            <button @click="startSimulationFromManual()" 
-                                    class="bg-blue-500 hover:bg-blue-600 py-2 px-4 rounded-lg transition-colors w-full">
-                                Start Simulation
-                            </button>
+                            </div>
+                        </template>
+                        
+                        <div x-show="processes.length === 0" class="text-center text-gray-400 py-4">
+                            No processes added yet
                         </div>
                     </div>
                 </div>
             </div>
             
-            <!-- Game Interface (shown after simulation starts) -->
-            <div x-show="simulationStarted">
-                <div class="flex justify-between items-center mb-6">
-                    <h2 class="text-2xl font-bold">Skenario Multi-Core</h2>
-                    <button @click="resetSimulation()" 
-                            class="bg-red-500 hover:bg-red-600 py-2 px-4 rounded-lg transition-colors">
-                        Reset
+            <!-- Middle Column: Visualization and Real-time Education -->
+            <div class="space-y-4">
+                <!-- Resource Allocation Graph -->
+                <div class="bg-black/30 p-4 rounded-xl">
+                    <h2 class="text-xl font-bold mb-4">Resource Allocation Graph</h2>
+                    <div id="visualization" class="h-[350px] bg-black/20 rounded-lg mb-4"></div>
+                    
+                    <!-- Deadlock Info -->
+                    <div x-show="deadlockDetected" class="bg-red-900/30 p-3 rounded-lg animate-pulse">
+                        <div class="flex items-center">
+                            <span class="text-2xl mr-2">⚠️</span>
+                            <h3 class="font-bold">Deadlock Detected!</h3>
+                        </div>
+                        <p class="text-sm mt-1">
+                            A circular wait has been detected involving 
+                            <span x-text="deadlockProcesses.length"></span> processes.
+                        </p>
+                        <div class="text-sm mt-2">
+                            <p>Deadlock cycle:</p>
+                            <p x-text="formatDeadlockCycle()"></p>
+                        </div>
+                    </div>
+                    
+                    <!-- No Deadlock Info -->
+                    <div x-show="!deadlockDetected && processes.length > 0" class="bg-green-900/30 p-3 rounded-lg">
+                        <div class="flex items-center">
+                            <span class="text-2xl mr-2">✓</span>
+                            <h3 class="font-bold">No Deadlock</h3>
+                        </div>
+                        <p class="text-sm mt-1">
+                            Current resource allocation is safe.
+                        </p>
+                    </div>
+                </div>
+                
+                <!-- Real-time Educational Feedback -->
+                <div x-show="showRealtimeEdu" class="bg-black/30 p-4 rounded-xl">
+                    <h2 class="text-xl font-bold mb-2 flex items-center">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-1" viewBox="0 0 20 20" fill="currentColor">
+                            <path d="M10.394 2.08a1 1 0 00-.788 0l-7 3a1 1 0 000 1.84L5.25 8.051a.999.999 0 01.356-.257l4-1.714a1 1 0 11.788 1.838l-2.727 1.168 1.94.831a1 1 0 00.787 0l7-3a1 1 0 000-1.838l-7-3zM3.31 9.397a1 1 0 011.354-.4L9.793 12.1a1 1 0 01.431 0A.999.999 0 0010 12a.999.999 0 00-.217-.212l-5-3a1 1 0 00-1.472 1.21L5 12.92v3.584a1 1 0 001.553.833l3.622-2.414a1 1 0 00.394-1.192 2.502 2.502 0 01-.273-.377l-3.292-5.482a1 1 0 111.732-.998l3.292 5.482a2.552 2.552 0 01-.273.372 1 1 0 00.394 1.198l3.622 2.414a1 1 0 001.553-.833V9.239L10 6.416a1 1 0 00-1.316-.082l-2.743 1.643a1 1 0 01-1.19-.19A1 1 0 004 7a1 1 0 00-1 1v2.667a1 1 0 01-.5.866l-1.69.996z" />
+                        </svg>
+                        Real-time Guidance
+                    </h2>
+                    
+                    <div id="edu-log" class="bg-black/20 p-3 rounded-lg max-h-[200px] overflow-y-auto space-y-2">
+                        <template x-for="step in eduSteps" :key="step.id">
+                            <div :class="{
+                                'bg-blue-900/20 border-l-4 border-blue-500': step.type === 'info',
+                                'bg-green-900/20 border-l-4 border-green-500': step.type === 'success',
+                                'bg-red-900/20 border-l-4 border-red-500': step.type === 'warning',
+                                'bg-yellow-900/20 border-l-4 border-yellow-500': step.type === 'tip',
+                                'bg-purple-900/20 border-l-4 border-purple-500': step.type === 'welcome'
+                            }" class="p-2 rounded-r text-sm">
+                                <p x-text="step.message"></p>
+                                <p class="text-xs text-gray-400 mt-1" x-text="step.timestamp.toLocaleTimeString()"></p>
+                            </div>
+                        </template>
+                    </div>
+                    
+                    <div x-show="deadlockDetected" class="bg-red-900/20 p-3 rounded-lg mt-3">
+                        <h4 class="font-bold">Kondisi Deadlock</h4>
+                        <p class="text-sm mt-1">
+                            Deadlock terjadi karena 4 kondisi terpenuhi:
+                        </p>
+                        <ol class="list-decimal list-inside text-sm mt-1 space-y-1">
+                            <li>Mutual Exclusion: Resource hanya bisa digunakan oleh 1 proses</li>
+                            <li>Hold & Wait: Proses menunggu resource sambil memegang resource lain</li>
+                            <li>No Preemption: Resource tak bisa diambil paksa</li>
+                            <li>Circular Wait: Ada siklus tunggu melingkar antar proses</li>
+                        </ol>
+                    </div>
+                    
+                    <div x-show="eduHighlights && eduHighlights.type == 'deadlock_cycle'" class="bg-yellow-900/20 p-3 rounded-lg mt-3">
+                        <h4 class="font-bold">Circular Wait Terdeteksi</h4>
+                        <p class="text-sm mt-1" x-text="'Siklus deadlock: ' + (eduHighlights?.cycle || '')"></p>
+                        <p class="text-sm mt-1">
+                            Untuk menyelesaikan deadlock, Anda perlu memutus siklus ini dengan salah satu strategi resolusi.
+                        </p>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Right Column: Resources and Actions -->
+            <div class="space-y-4">
+                <!-- Resources Management -->
+                <div class="bg-black/30 p-4 rounded-xl">
+                    <h2 class="text-xl font-bold mb-4">Resource Management</h2>
+                    
+                    <!-- Resource Creation -->
+                    <div class="mb-4">
+                        <h3 class="font-semibold mb-2">Create New Resource</h3>
+                        <div class="bg-black/20 p-3 rounded-lg mb-2">
+                            <div class="flex flex-wrap gap-2 mb-2">
+                                <div>
+                                    <label class="block text-xs mb-1">Name</label>
+                                    <input x-model="newResource.name" type="text" class="bg-black/30 text-white p-1 rounded w-full" placeholder="Resource Name">
+                                </div>
+                                <div>
+                                    <label class="block text-xs mb-1">Icon</label>
+                                    <select x-model="newResource.icon" class="bg-black/30 text-white p-1 rounded">
+                                        <option value="🖥️">🖥️ CPU</option>
+                                        <option value="💾">💾 Disk</option>
+                                        <option value="📊">📊 Memory</option>
+                                        <option value="🖨️">🖨️ Printer</option>
+                                        <option value="🌐">🌐 Network</option>
+                                        <option value="🎮">🎮 GPU</option>
+                                    </select>
+                                </div>
+                            </div>
+                            
+                            <button @click="addResource()" class="bg-green-600 hover:bg-green-700 px-3 py-1 rounded-lg text-sm w-full">
+                                Add Resource
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- Resource List -->
+                    <h3 class="font-semibold mb-2">Available Resources</h3>
+                    <div class="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                        <template x-for="(resource, index) in resources.filter(r => !r.held_by)" :key="resource.id">
+                            <div 
+                                class="bg-green-900/30 p-3 rounded-lg flex items-center cursor-grab relative"
+                                draggable="true"
+                                @dragstart="dragResource($event, resource.id)"
+                                :data-resource-id="resource.id"
+                            >
+                                <span class="text-xl mr-2" x-text="resource.icon"></span>
+                                <span x-text="resource.name"></span>
+                                <button @click="removeResource(index)" class="absolute top-1 right-1 text-red-400 hover:text-red-300 text-xs">
+                                    ✖
+                                </button>
+                            </div>
+                        </template>
+                    </div>
+                    
+                    <!-- Allocated Resources -->
+                    <h3 class="font-semibold mt-4 mb-2">Allocated Resources</h3>
+                    <div class="space-y-2">
+                        <template x-for="resource in resources.filter(r => r.held_by)" :key="resource.id">
+                            <div class="bg-gray-800/50 p-3 rounded-lg flex items-center justify-between">
+                                <div class="flex items-center">
+                                    <span class="text-xl mr-2" x-text="resource.icon"></span>
+                                    <div>
+                                        <span x-text="resource.name"></span>
+                                        <div class="text-xs text-gray-400">
+                                            Allocated to <span x-text="getProcessName(resource.held_by)"></span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <button @click="releaseResource(resource.id)" class="bg-blue-600 hover:bg-blue-700 px-2 py-1 rounded text-xs">
+                                    Release
+                                </button>
+                            </div>
+                        </template>
+                        
+                        <div x-show="resources.filter(r => r.held_by).length === 0" class="text-center text-gray-400 py-4">
+                            No allocated resources
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Deadlock Resolution -->
+                <div x-show="deadlockDetected" class="bg-black/30 p-4 rounded-xl">
+                    <h2 class="text-xl font-bold mb-3">Deadlock Resolution</h2>
+                    <p class="text-sm mb-3">Try different strategies to resolve the deadlock:</p>
+                    
+                    <div class="space-y-2">
+                        <!-- Resource Preemption -->
+                        <button 
+                            @click="showPreemptionOptions = true" 
+                            class="bg-black/20 p-3 rounded-lg hover:bg-black/30 w-full text-left transition-colors"
+                        >
+                            <div class="flex items-center">
+                                <div class="bg-yellow-600 p-2 rounded-full mr-3">⚡</div>
+                                <div>
+                                    <h4 class="font-bold">Preemption</h4>
+                                    <p class="text-xs text-gray-400">Force take a resource from a process</p>
+                                </div>
+                            </div>
+                        </button>
+                        
+                        <!-- Terminate Process -->
+                        <button 
+                            @click="showTerminateOptions = true" 
+                            class="bg-black/20 p-3 rounded-lg hover:bg-black/30 w-full text-left transition-colors"
+                        >
+                            <div class="flex items-center">
+                                <div class="bg-red-600 p-2 rounded-full mr-3">✖</div>
+                                <div>
+                                    <h4 class="font-bold">Kill Process</h4>
+                                    <p class="text-xs text-gray-400">Terminate a deadlocked process</p>
+                                </div>
+                            </div>
+                        </button>
+                        
+                        <!-- Complete Rollback -->
+                        <button 
+                            @click="confirmRollback()" 
+                            class="bg-black/20 p-3 rounded-lg hover:bg-black/30 w-full text-left transition-colors"
+                        >
+                            <div class="flex items-center">
+                                <div class="bg-purple-600 p-2 rounded-full mr-3">↩</div>
+                                <div>
+                                    <h4 class="font-bold">Rollback All</h4>
+                                    <p class="text-xs text-gray-400">Reset all resource allocations</p>
+                                </div>
+                            </div>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Preemption Modal -->
+        <div x-show="showPreemptionOptions" class="fixed inset-0 bg-black/80 flex items-center justify-center z-50">
+            <div class="bg-gradient-to-br from-slate-800 to-indigo-900 p-5 rounded-xl max-w-md w-full mx-4">
+                <div class="flex justify-between items-center mb-4 border-b border-white/10 pb-2">
+                    <h3 class="text-xl font-bold">Select Resource to Preempt</h3>
+                    <button @click="showPreemptionOptions = false" class="text-white/70 hover:text-white">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
                     </button>
                 </div>
                 
-                <!-- Multi-Core CPU View -->
-                <div class="mt-4 bg-black/20 p-4 rounded-lg mb-6">
-                    <h3 class="font-bold mb-2">CPU Cores</h3>
-                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                        <template x-for="(core, index) in cores" :key="index">
-                            <div class="bg-black/20 p-3 rounded-lg">
-                                <h4 class="font-bold mb-2" x-text="core"></h4>
-                                <div class="space-y-2">
-                                    <template x-for="process in getProcessesForCore(core)" :key="process.name">
-                                        <div :class="{'bg-red-500/20': deadlockProcesses.includes(process.name)}" 
-                                             class="p-2 rounded text-sm">
-                                            <span x-text="process.name"></span>
+                <div class="mb-4">
+                    <p class="text-sm mb-3 text-gray-300">Choose which allocated resource to forcefully take:</p>
+                    <div class="space-y-2 max-h-60 overflow-y-auto">
+                        <template x-for="resource in resources.filter(r => r.held_by)" :key="resource.id">
+                            <div class="bg-black/20 p-3 rounded-lg flex items-center justify-between hover:bg-black/30 cursor-pointer transition-colors"
+                                 @click="preemptResource(resource.id)">
+                                <div class="flex items-center">
+                                    <span class="text-xl mr-2" x-text="resource.icon"></span>
+                                    <div>
+                                        <div x-text="resource.name"></div>
+                                        <div class="text-xs text-gray-400">
+                                            Held by <span x-text="getProcessName(resource.held_by)"></span>
                                         </div>
-                                    </template>
+                                    </div>
                                 </div>
+                                <div class="text-yellow-500 text-sm">Select</div>
                             </div>
                         </template>
                     </div>
                 </div>
                 
-                <!-- Informasi Proses dan Resource -->
-                <div id="game-area" class="mt-4">
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <!-- Tabel Proses -->
-                        <div class="bg-black/20 p-4 rounded-lg">
-                            <h3 class="font-bold mb-2">Proses</h3>
-                            <div class="overflow-x-auto">
-                                <table class="w-full text-sm">
-                                    <thead>
-                                        <tr>
-                                            <th class="text-left py-2">Proses</th>
-                                            <th class="text-left py-2">Alokasi</th>
-                                            <th class="text-left py-2">Max Kebutuhan</th>
-                                            <th class="text-left py-2">Sisa Kebutuhan</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        <template x-for="(process, idx) in processes" :key="idx">
-                                            <tr :class="{'bg-red-500/20': deadlockProcesses.includes(process.name)}">
-                                                <td class="py-2" x-text="process.name"></td>
-                                                <td class="py-2" x-text="formatResources(process.allocation)"></td>
-                                                <td class="py-2" x-text="formatResources(process.max)"></td>
-                                                <td class="py-2" x-text="formatResources(process.need)"></td>
-                                            </tr>
-                                        </template>
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
-                        
-                        <!-- Resources -->
-                        <div class="bg-black/20 p-4 rounded-lg">
-                            <h3 class="font-bold mb-2">Resources Tersedia</h3>
-                            <div class="flex flex-wrap gap-3 mt-4">
-                                <template x-for="(count, resource) in available" :key="resource">
-                                    <div class="p-3 bg-green-500/20 rounded-lg flex flex-col items-center">
-                                        <span x-text="resource" class="font-bold"></span>
-                                        <span x-text="count + ' tersedia'"></span>
-                                    </div>
-                                </template>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                
-                <!-- Visualisasi -->
-                <div class="mt-6 bg-black/20 p-4 rounded-lg">
-                    <h3 class="font-bold mb-2">Visualisasi Resource Allocation Graph</h3>
-                    <div class="relative h-64 border border-white/20 rounded-lg" id="visualization">
-                        <!-- SVG akan di-render oleh JavaScript -->
-                    </div>
-                </div>
-                
-                <!-- Status & Solusi -->
-                <div class="mt-6" x-show="status !== ''">
-                    <div class="bg-black/20 p-4 rounded-lg">
-                        <h3 class="font-bold mb-2">Status</h3>
-                        <p x-text="statusMessage" class="mb-2"></p>
-                        <p x-text="explanation" class="italic text-yellow-300"></p>
-                        
-                        <div x-show="status === 'deadlock_detected'" class="mt-4">
-                            <h4 class="font-bold">Solusi yang Tersedia:</h4>
-                            <div class="flex flex-wrap gap-3 mt-2">
-                                <button @click="applySolution('Avoidance')" 
-                                        class="bg-green-500 hover:bg-green-600 py-2 px-4 rounded-lg transition-colors">
-                                    Avoidance (Banker's Algorithm)
-                                </button>
-                                <button @click="applySolution('Prevention')" 
-                                        class="bg-blue-500 hover:bg-blue-600 py-2 px-4 rounded-lg transition-colors">
-                                    Prevention
-                                </button>
-                                <button @click="applySolution('Detection')" 
-                                        class="bg-purple-500 hover:bg-purple-600 py-2 px-4 rounded-lg transition-colors">
-                                    Detection & Recovery
-                                </button>
-                            </div>
-                            <p class="text-sm mt-2 italic">Pilih solusi untuk menyelesaikan deadlock</p>
-                        </div>
-                    </div>
-                </div>
-                
-                <!-- Step-by-Step Solving Visualization -->
-                <div class="mt-6" x-show="solutionSteps.length > 0">
-                    <div class="bg-black/20 p-4 rounded-lg">
-                        <div class="flex justify-between items-center mb-4">
-                            <h3 class="font-bold">Penyelesaian Step-by-Step: <span x-text="currentStrategy"></span></h3>
-                            <div class="flex gap-2">
-                                <button @click="prevStep" 
-                                        :disabled="currentStepIndex <= 0"
-                                        :class="{'opacity-50 cursor-not-allowed': currentStepIndex <= 0}"
-                                        class="bg-gray-500 hover:bg-gray-600 py-1 px-3 rounded transition-colors">
-                                    &laquo; Sebelumnya
-                                </button>
-                                <button @click="nextStep" 
-                                        :disabled="currentStepIndex >= solutionSteps.length - 1"
-                                        :class="{'opacity-50 cursor-not-allowed': currentStepIndex >= solutionSteps.length - 1}"
-                                        class="bg-gray-500 hover:bg-gray-600 py-1 px-3 rounded transition-colors">
-                                    Selanjutnya &raquo;
-                                </button>
-                            </div>
-                        </div>
-                        
-                        <div class="flex justify-between items-center">
-                            <span>Step <span x-text="currentStepIndex + 1"></span> dari <span x-text="solutionSteps.length"></span></span>
-                            <span x-show="isSolutionComplete" class="text-green-400">✓ Solusi Selesai</span>
-                        </div>
-                        
-                        <div class="mt-4 p-3 bg-white/10 rounded-lg">
-                            <!-- Prevention Step -->
-                            <template x-if="currentStrategy === 'Prevention'">
-                                <div>
-                                    <h4 class="font-semibold" x-text="`Langkah ${currentStepIndex + 1}: ${currentStep.action}`"></h4>
-                                    <p class="mt-1" x-text="currentStep.detail"></p>
-                                    <div class="mt-2">
-                                        <span class="text-sm italic">Proses: <span x-text="currentStep.process"></span></span>
-                                    </div>
-                                </div>
-                            </template>
-                            
-                            <!-- Banker's Algorithm Step -->
-                            <template x-if="currentStrategy === 'Avoidance'">
-                                <div>
-                                    <h4 class="font-semibold" x-text="`Langkah ${currentStepIndex + 1}: Eksekusi Proses ${currentStep.process}`"></h4>
-                                    <div class="mt-2">
-                                        <div>Kebutuhan: <span x-text="formatResources(currentStep.need)"></span></div>
-                                        <div>Resources tersedia sebelumnya: <span x-text="formatResources(currentStep.work_before)"></span></div>
-                                        <div>Resources tersedia setelahnya: <span x-text="formatResources(currentStep.work_after)"></span></div>
-                                    </div>
-                                    
-                                    <!-- Safe sequence with visual indicators -->
-                                    <div class="mt-4 bg-black/20 p-3 rounded-lg">
-                                        <h5 class="text-sm font-semibold">Safe Sequence:</h5>
-                                        <div class="flex items-center justify-center mt-2 overflow-x-auto">
-                                            <template x-for="(proc, idx) in safeSequence" :key="idx">
-                                                <div class="flex items-center">
-                                                    <div :class="{
-                                                            'bg-green-500/30': idx < currentStepIndex,
-                                                            'bg-blue-500/50': idx === currentStepIndex,
-                                                            'bg-gray-500/30': idx > currentStepIndex
-                                                        }" 
-                                                        class="rounded-full w-8 h-8 flex items-center justify-center"
-                                                        x-text="proc">
-                                                    </div>
-                                                    <template x-if="idx < safeSequence.length - 1">
-                                                        <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path>
-                                                        </svg>
-                                                    </template>
-                                                </div>
-                                            </template>
-                                        </div>
-                                    </div>
-                                    
-                                    <!-- Explanation of current step -->
-                                    <div class="mt-2 text-sm italic" x-show="currentStepIndex === solutionSteps.length - 1">
-                                        <p>State aman telah dikonfirmasi dengan urutan eksekusi yang ditunjukkan di atas.</p>
-                                    </div>
-                                </div>
-                            </template>
-                            
-                            <!-- Detection & Recovery Step -->
-                            <template x-if="currentStrategy === 'Detection'">
-                                <div>
-                                    <div class="flex items-center justify-between">
-                                        <h4 class="font-semibold" x-text="`Langkah ${currentStepIndex + 1}: ${currentStep.type === 'detection' ? 'Deteksi Deadlock' : (currentStep.type === 'recovery' ? 'Recovery' : 'Proses Berlanjut')}`"></h4>
-                                        <span class="text-sm px-2 py-1 rounded" 
-                                            :class="{
-                                                'bg-yellow-500/30': currentStep.type === 'detection',
-                                                'bg-red-500/30': currentStep.type === 'recovery',
-                                                'bg-green-500/30': currentStep.type === 'continue'
-                                            }"
-                                            x-text="currentStep.type === 'detection' ? 'Deteksi' : (currentStep.type === 'recovery' ? 'Terminasi' : 'Berlanjut')"></span>
-                                    </div>
-                                    
-                                    <p class="mt-1" x-text="currentStep.detail"></p>
-                                    
-                                    <!-- Detection specific info -->
-                                    <template x-if="currentStep.type === 'detection'">
-                                        <div class="mt-3 p-3 bg-yellow-500/10 rounded-lg">
-                                            <h5 class="font-semibold text-sm">Proses yang mengalami deadlock:</h5>
-                                            <div class="flex flex-wrap gap-2 mt-1">
-                                                <template x-for="proc in currentStep.deadlocked" :key="proc">
-                                                    <span class="px-2 py-1 bg-red-500/30 rounded text-sm" x-text="proc"></span>
-                                                </template>
-                                            </div>
-                                            
-                                            <h5 class="font-semibold text-sm mt-3">Circular Wait yang terdeteksi:</h5>
-                                            <template x-if="currentStep.circular_waits && currentStep.circular_waits.length > 0">
-                                                <ul class="list-disc pl-5 mt-1 space-y-1 text-sm">
-                                                    <template x-for="(cycle, idx) in currentStep.circular_waits" :key="idx">
-                                                        <li>
-                                                            <span x-text="cycle.join(' → ')"></span>
-                                                            <span> → </span>
-                                                            <span x-text="cycle[0]"></span>
-                                                        </li>
-                                                    </template>
-                                                </ul>
-                                            </template>
-                                            <template x-if="!currentStep.circular_waits || currentStep.circular_waits.length === 0">
-                                                <p class="text-sm text-yellow-300 mt-1">
-                                                    Tidak ada siklus wait-for yang terdeteksi secara langsung, namun deadlock ada karena tidak ada proses yang bisa selesai.
-                                                </p>
-                                            </template>
-                                            
-                                            <h5 class="font-semibold text-sm mt-3">Ketergantungan antar proses:</h5>
-                                            <template x-if="currentStep.dependencies">
-                                                <ul class="list-disc pl-5 mt-1 space-y-1 text-sm">
-                                                    <template x-for="(deps, process) in currentStep.dependencies" :key="process">
-                                                        <li x-show="deps.waits_for && deps.waits_for.length > 0">
-                                                            <span x-text="process"></span> menunggu resource yang dipegang oleh 
-                                                            <span x-text="deps.waits_for.join(', ')"></span>
-                                                        </li>
-                                                    </template>
-                                                </ul>
-                                            </template>
-                                        </div>
-                                    </template>
-                                    
-                                    <!-- Recovery specific info -->
-                                    <template x-if="currentStep.type === 'recovery'">
-                                        <div class="mt-3 p-3 bg-red-500/10 rounded-lg">
-                                            <h5 class="font-semibold text-sm">Proses yang diterminasi:</h5>
-                                            <span class="px-2 py-1 bg-red-500/30 rounded text-sm" x-text="currentStep.process"></span>
-                                            
-                                            <h5 class="font-semibold text-sm mt-3">Resource yang dibebaskan:</h5>
-                                            <div class="flex flex-wrap gap-2 mt-1">
-                                                <template x-for="(res, idx) in currentStep.resources_freed" :key="idx">
-                                                    <div class="px-2 py-1 bg-green-500/30 rounded text-sm flex items-center gap-1">
-                                                        <span x-text="res.amount"></span> 
-                                                        <span x-text="res.resource"></span>
-                                                    </div>
-                                                </template>
-                                            </div>
-                                            
-                                            <template x-if="currentStep.remaining_deadlock && currentStep.remaining_deadlock.length > 0">
-                                                <div class="mt-3">
-                                                    <h5 class="font-semibold text-sm text-red-400">Deadlock masih terjadi pada:</h5>
-                                                    <div class="flex flex-wrap gap-2 mt-1">
-                                                        <template x-for="proc in currentStep.remaining_deadlock" :key="proc">
-                                                            <span class="px-2 py-1 bg-red-500/30 rounded text-sm" x-text="proc"></span>
-                                                        </template>
-                                                    </div>
-                                                </div>
-                                            </template>
-                                            <template x-if="!currentStep.remaining_deadlock || currentStep.remaining_deadlock.length === 0">
-                                                <div class="mt-3">
-                                                    <h5 class="font-semibold text-sm text-green-400">Deadlock berhasil diselesaikan! ✓</h5>
-                                                </div>
-                                            </template>
-                                        </div>
-                                    </template>
-                                    
-                                    <!-- Continue specific info -->
-                                    <template x-if="currentStep.type === 'continue'">
-                                        <div class="mt-3 p-3 bg-green-500/10 rounded-lg">
-                                            <h5 class="font-semibold text-sm">Proses yang melanjutkan eksekusi:</h5>
-                                            <span class="px-2 py-1 bg-green-500/30 rounded text-sm" x-text="currentStep.process"></span>
-                                            
-                                            <h5 class="font-semibold text-sm mt-3">Efek pada sistem:</h5>
-                                            <p class="text-sm mt-1">
-                                                Proses ini dapat melanjutkan eksekusi tanpa terkendala deadlock dan akan menyelesaikan tugasnya
-                                                serta melepaskan semua resource yang dipegang setelah selesai.
-                                            </p>
-                                        </div>
-                                    </template>
-                                </div>
-                            </template>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Help Section -->
-                <div class="mt-6">
-                    <button @click="showHelp = !showHelp" class="text-sm underline">
-                        <span x-text="showHelp ? 'Sembunyikan Bantuan' : 'Tampilkan Bantuan'"></span>
+                <div class="flex justify-end border-t border-white/10 pt-3">
+                    <button @click="showPreemptionOptions = false" class="bg-gray-700 hover:bg-gray-800 px-4 py-2 rounded-lg text-sm">
+                        Cancel
                     </button>
-                    <div x-show="showHelp" class="bg-black/20 p-4 rounded-lg mt-2">
-                        <h3 class="font-bold mb-2">Bantuan</h3>
-                        <div class="space-y-2">
-                            <div>
-                                <h4 class="font-semibold">Apa yang sedang terjadi?</h4>
-                                <p>Simulasi menunjukkan beberapa proses yang memerlukan resource untuk menyelesaikan tugasnya. Jika terjadi deadlock, proses-proses tersebut saling menunggu resource yang tidak akan pernah dilepaskan.</p>
-                            </div>
-                            <div>
-                                <h4 class="font-semibold">Kenapa terjadi deadlock?</h4>
-                                <p>Deadlock terjadi ketika ada 4 kondisi: Mutual Exclusion, Hold and Wait, No Preemption, dan Circular Wait.</p>
-                            </div>
-                            <div>
-                                <h4 class="font-semibold">Apa efek dari solusi yang dipilih?</h4>
-                                <ul class="list-disc pl-5 space-y-1">
-                                    <li><strong>Avoidance:</strong> Menggunakan Banker's Algorithm untuk memastikan state sistem tetap aman.</li>
-                                    <li><strong>Prevention:</strong> Mencegah satu atau lebih dari 4 kondisi deadlock terjadi.</li>
-                                    <li><strong>Detection & Recovery:</strong> Mendeteksi deadlock dan pulihkan dengan terminasi proses atau preemption resource.</li>
-                                </ul>
-                            </div>
-                        </div>
-                    </div>
                 </div>
             </div>
         </div>
-    </main>
-
-    <script>
-        function gameData() {
-            return {
-                // Setup configuration
-                setupConfig: {
-                    processes: 5,
-                    resources: 3,
-                    cores: 2,
-                    resourceNames: [],
-                    coreNames: []
-                },
-                manualSetupActive: false,
-                manualProcesses: [],
-                simulationStarted: false,
+        
+        <!-- Terminate Process Modal -->
+        <div x-show="showTerminateOptions" class="fixed inset-0 bg-black/80 flex items-center justify-center z-50">
+            <div class="bg-gradient-to-br from-slate-800 to-indigo-900 p-5 rounded-xl max-w-md w-full mx-4">
+                <div class="flex justify-between items-center mb-4 border-b border-white/10 pb-2">
+                    <h3 class="text-xl font-bold">Select Process to Terminate</h3>
+                    <button @click="showTerminateOptions = false" class="text-white/70 hover:text-white">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                    </button>
+                </div>
                 
-                // Game state
-                processes: [],
-                resources: [],
-                cores: [],
-                processCoreMapping: {},
-                available: {},
-                status: '',
-                statusMessage: '',
-                explanation: '',
-                deadlockProcesses: [],
-                showHelp: false,
+                <div class="mb-4">
+                    <p class="text-sm mb-3 text-gray-300">Choose which process to terminate:</p>
+                    <div class="space-y-2 max-h-60 overflow-y-auto">
+                        <template x-for="process in deadlockProcesses.length > 0 ? processes.filter(p => deadlockProcesses.includes(p.id)) : processes" :key="process.id">
+                            <div class="bg-black/20 p-3 rounded-lg flex items-center justify-between hover:bg-black/30 cursor-pointer transition-colors"
+                                 @click="terminateProcess(process.id)">
+                                <div class="flex items-center">
+                                    <span class="text-xl mr-2" x-text="process.icon"></span>
+                                    <div>
+                                        <div x-text="process.name"></div>
+                                        <div class="text-xs text-gray-400">
+                                            Holding <span x-text="process.allocation.length"></span> resources
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="text-red-500 text-sm">Terminate</div>
+                            </div>
+                        </template>
+                    </div>
+                </div>
                 
-                // Solution state
-                currentStrategy: '',
-                solutionSteps: [],
-                currentStepIndex: 0,
-                safeSequence: [],
-                isSolutionComplete: false,
-                
-                init() {
-                    // Initialize resource and core names
-                    this.updateResourceAndCoreNames();
-                },
-                
-                updateResourceAndCoreNames() {
-                    this.setupConfig.resourceNames = Array.from(
-                        {length: this.setupConfig.resources}, 
-                        (_, i) => `R${i+1}`
-                    );
-                    
-                    this.setupConfig.coreNames = Array.from(
-                        {length: this.setupConfig.cores}, 
-                        (_, i) => `Core${i+1}`
-                    );
-                },
-                
-                generateRandomScenario() {
-                    this.updateResourceAndCoreNames();
-                    
-                    const data = {
-                        processes: parseInt(this.setupConfig.processes),
-                        resources: parseInt(this.setupConfig.resources),
-                        cores: parseInt(this.setupConfig.cores)
-                    };
-                    
-                    // Simulasi fetch API
-                    setTimeout(() => {
-                        const scenario = this.simulateRandomScenario(data);
-                        this.loadScenario(scenario);
-                        this.simulationStarted = true;
-                        this.detectDeadlock();
-                    }, 500);
-                    
-                    // Implementasi fetch API yang sebenarnya
-                    /*
-                    fetch('/api/generate', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                        },
-                        body: JSON.stringify(data)
-                    })
-                    .then(response => response.json())
-                    .then(scenario => {
-                        this.loadScenario(scenario);
-                        this.simulationStarted = true;
-                        this.detectDeadlock();
-                    });
-                    */
-                },
-                
-                manualSetup() {
-                    this.updateResourceAndCoreNames();
-                    this.manualSetupActive = true;
-                    this.manualProcesses = [];
-                    
-                    // Create template processes
-                    for (let i = 0; i < this.setupConfig.processes; i++) {
-                        const process = {
-                            name: `P${i+1}`,
-                            core: this.setupConfig.coreNames[i % this.setupConfig.coreNames.length],
-                            allocation: Array(this.setupConfig.resources).fill(0),
-                            max: Array(this.setupConfig.resources).fill(0)
-                        };
-                        this.manualProcesses.push(process);
-                    }
-                },
-                
-                startSimulationFromManual() {
-                    // Create scenario from manual inputs
-                    const scenario = {
-                        processes: this.manualProcesses.map(p => p.name),
-                        resources: this.setupConfig.resourceNames,
-                        cores: this.setupConfig.coreNames,
-                        process_core_mapping: {},
-                        allocation: [],
-                        max_need: [],
-                        need: [],
-                        available: Array(this.setupConfig.resources).fill(0)
-                    };
-                    
-                    // Fill process-core mapping
-                    this.manualProcesses.forEach(p => {
-                        scenario.process_core_mapping[p.name] = p.core;
-                    });
-                    
-                    // Fill allocation and max_need
-                    this.manualProcesses.forEach(p => {
-                        scenario.allocation.push(p.allocation.map(Number));
-                        scenario.max_need.push(p.max.map(Number));
-                    });
-                    
-                    // Calculate need and available
-                    scenario.need = [];
-                    for (let i = 0; i < this.manualProcesses.length; i++) {
-                        const need = [];
-                        for (let j = 0; j < this.setupConfig.resources; j++) {
-                            need.push(scenario.max_need[i][j] - scenario.allocation[i][j]);
-                        }
-                        scenario.need.push(need);
-                    }
-                    
-                    // Calculate total resources (randomly 2-6 per resource) and available resources
-                    const totalResources = {};
-                    for (let j = 0; j < this.setupConfig.resources; j++) {
-                        const allocatedSum = scenario.allocation.reduce((sum, alloc) => sum + alloc[j], 0);
-                        const totalForResource = allocatedSum + Math.floor(Math.random() * 4) + 2; // 2-6 available
-                        totalResources[scenario.resources[j]] = totalForResource;
-                        scenario.available[j] = totalForResource - allocatedSum;
-                    }
-                    
-                    scenario.total_resources = totalResources;
-                    
-                    // Load scenario and start simulation
-                    this.loadScenario(scenario);
-                    this.simulationStarted = true;
-                    this.manualSetupActive = false;
-                    this.detectDeadlock();
-                },
-                
-                loadScenario(scenario) {
-                    this.processes = [];
-                    for (let i = 0; i < scenario.processes.length; i++) {
-                        this.processes.push({
-                            name: scenario.processes[i],
-                            allocation: scenario.allocation[i],
-                            max: scenario.max_need[i],
-                            need: scenario.need[i]
-                        });
-                    }
-                    
-                    this.resources = scenario.resources;
-                    this.cores = scenario.cores;
-                    this.processCoreMapping = scenario.process_core_mapping;
-                    
-                    // Initialize available resources
-                    this.available = {};
-                    for (let i = 0; i < scenario.resources.length; i++) {
-                        this.available[scenario.resources[i]] = scenario.available[i];
-                    }
-                    
-                    // Reset status
-                    this.status = '';
-                    this.statusMessage = '';
-                    this.explanation = '';
-                    this.deadlockProcesses = [];
-                    
-                    // Initialize visualization
-                    this.renderVisualization();
-                },
-                
-                simulateRandomScenario(data) {
-                    // Implementasi sederhana untuk simulasi random scenario
-                    const scenario = {
-                        processes: [],
-                        resources: [],
-                        cores: [],
-                        process_core_mapping: {},
-                        allocation: [],
-                        max_need: [],
-                        need: [],
-                        available: []
-                    };
-                    
-                    // Generate process names
-                    for (let i = 0; i < data.processes; i++) {
-                        scenario.processes.push(`P${i+1}`);
-                    }
-                    
-                    // Generate resource names
-                    for (let i = 0; i < data.resources; i++) {
-                        scenario.resources.push(`R${i+1}`);
-                    }
-                    
-                    // Generate core names
-                    for (let i = 0; i < data.cores; i++) {
-                        scenario.cores.push(`Core${i+1}`);
-                    }
-                    
-                    // Assign processes to cores randomly
-                    scenario.processes.forEach(p => {
-                        scenario.process_core_mapping[p] = scenario.cores[Math.floor(Math.random() * scenario.cores.length)];
-                    });
-                    
-                    // Generate total resource instances (2-5 per resource)
-                    const totalResources = {};
-                    scenario.resources.forEach(r => {
-                        totalResources[r] = Math.floor(Math.random() * 3) + 3; // 3-5 instances
-                    });
-                    
-                    // Allocate resources to processes
-                    for (let i = 0; i < scenario.processes.length; i++) {
-                        const alloc = [];
-                        const max = [];
-                        
-                        for (let j = 0; j < scenario.resources.length; j++) {
-                            // Random allocation based on available resources
-                            const resource = scenario.resources[j];
-                            const available = totalResources[resource];
-                            const allocated = Math.min(available, Math.floor(Math.random() * 2)); // 0-1 allocations
-                            
-                            alloc.push(allocated);
-                            // Max need is allocation plus some random additional need
-                            max.push(allocated + Math.floor(Math.random() * 3)); // Need 0-2 more
-                            
-                            totalResources[resource] -= allocated;
-                        }
-                        
-                        scenario.allocation.push(alloc);
-                        scenario.max_need.push(max);
-                    }
-                    
-                    // Calculate need
-                    for (let i = 0; i < scenario.processes.length; i++) {
-                        const need = [];
-                        for (let j = 0; j < scenario.resources.length; j++) {
-                            need.push(scenario.max_need[i][j] - scenario.allocation[i][j]);
-                        }
-                        scenario.need.push(need);
-                    }
-                    
-                    // Set available resources
-                    scenario.available = Object.values(totalResources);
-                    
-                    // Create potential deadlock by making circular dependencies
-                    if (scenario.processes.length >= 3) {
-                        // Pick 3 processes to create a circular wait if possible
-                        const p1 = 0, p2 = 1, p3 = 2;
-                        
-                        // Try to create P1 → P2 → P3 → P1 circular wait
-                        if (scenario.resources.length >= 3) {
-                            // P1 holds R1 that P2 needs
-                            scenario.allocation[p1][0] = 1;
-                            scenario.max_need[p2][0] = 2;
-                            // P2 holds R2 that P3 needs
-                            scenario.allocation[p2][1] = 1;
-                            scenario.max_need[p3][1] = 2;
-                            // P3 holds R3 that P1 needs
-                            scenario.allocation[p3][2] = 1;
-                            scenario.max_need[p1][2] = 2;
-                            
-                            // Recalculate need
-                            for (let i = 0; i < scenario.processes.length; i++) {
-                                for (let j = 0; j < scenario.resources.length; j++) {
-                                    scenario.need[i][j] = scenario.max_need[i][j] - scenario.allocation[i][j];
-                                }
-                            }
-                        }
-                    }
-                    
-                    return scenario;
-                },
-                
-                getProcessesForCore(coreName) {
-                    return this.processes.filter(p => this.processCoreMapping[p.name] === coreName);
-                },
-                
-                resetSimulation() {
-                    this.simulationStarted = false;
-                    this.manualSetupActive = false;
-                    this.processes = [];
-                    this.resources = [];
-                    this.cores = [];
-                    this.available = {};
-                    this.status = '';
-                    this.statusMessage = '';
-                    this.explanation = '';
-                    this.deadlockProcesses = [];
-                    this.solutionSteps = [];
-                    this.currentStepIndex = 0;
-                    this.safeSequence = [];
-                    this.isSolutionComplete = false;
-                },
-                
-                detectDeadlock() {
-                    const data = {
-                        processes: this.processes.map(p => p.name),
-                        resources: this.resources,
-                        allocation: this.processes.map(p => p.allocation),
-                        max_need: this.processes.map(p => p.max),
-                        available: Object.values(this.available)
-                    };
-                    
-                    // Simulasi hasil API (dalam implementasi sebenarnya gunakan fetch)
-                    setTimeout(() => {
-                        // Simulasi respon dari backend
-                        this.status = 'deadlock_detected';
-                        this.statusMessage = 'Deadlock terdeteksi!';
-                        this.explanation = 'Deadlock terjadi karena circular wait antara P1, P2 dan P5.';
-                        this.deadlockProcesses = ['P1', 'P2', 'P5'];
-                        
-                        // Render visualisasi setelah status deadlock diupdate
-                        this.renderVisualization();
-                    }, 500);
-                    
-                    // Implementasi fetch ke API (dikomentari untuk sementara)
-                    /*
-                    fetch('/api/simulate', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                        },
-                        body: JSON.stringify(data)
-                    })
-                    .then(response => response.json())
-                    .then(result => {
-                        this.status = result.status;
-                        this.statusMessage = result.status === 'deadlock_detected' ? 
-                            'Deadlock terdeteksi!' : 'Tidak ada deadlock';
-                        this.explanation = result.explanation;
-                        this.deadlockProcesses = result.deadlocked_processes || [];
-                        
-                        // Render visualisasi
-                        this.renderVisualization();
-                    });
-                    */
-                },
-                
-                applySolution(solution) {
-                    this.currentStrategy = solution;
-                    this.solutionSteps = [];
-                    this.currentStepIndex = 0;
-                    this.safeSequence = [];
-                    this.isSolutionComplete = false;
-                    
-                    // Prepare data for solution
-                    const data = {
-                        processes: this.processes.map(p => p.name),
-                        resources: this.resources,
-                        allocation: this.processes.map(p => p.allocation),
-                        max_need: this.processes.map(p => p.max),
-                        available: Object.values(this.available),
-                        strategy: solution
-                    };
-                    
-                    // Simulasi fetch API untuk step-by-step
-                    setTimeout(() => {
-                        let result = {};
-                        
-                        switch(solution) {
-                            case 'Prevention':
-                                result = this.simulatePrevention(data);
-                                break;
-                            case 'Avoidance':
-                                result = this.simulateBankersAlgorithm(data);
-                                break;
-                            case 'Detection':
-                                result = this.simulateDetectionRecovery(data);
-                                break;
-                        }
-                        
-                        // Update status message
-                        this.statusMessage = `Menerapkan ${result.strategy}`;
-                        this.explanation = result.explanation;
-                        
-                        // Set solution steps
-                        this.solutionSteps = result.steps;
-                        
-                        // For Banker's Algorithm
-                        if (solution === 'Avoidance' && result.safe_sequence) {
-                            this.safeSequence = result.safe_sequence;
-                        }
-                        
-                        // Update current step if we have steps
-                        if (this.solutionSteps.length > 0) {
-                            this.showStep(0);
-                        }
-                    }, 500);
-                    
-                    // Implementasi fetch ke API yang sebenarnya (dikomentari untuk sementara)
-                    /*
-                    fetch('/api/solve', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                        },
-                        body: JSON.stringify(data)
-                    })
-                    .then(response => response.json())
-                    .then(result => {
-                        // Update status message
-                        this.statusMessage = `Menerapkan ${result.strategy}`;
-                        this.explanation = result.explanation;
-                        
-                        // Set solution steps
-                        this.solutionSteps = result.steps;
-                        
-                        // For Banker's Algorithm
-                        if (solution === 'Avoidance' && result.safe_sequence) {
-                            this.safeSequence = result.safe_sequence;
-                        }
-                        
-                        // Update current step if we have steps
-                        if (this.solutionSteps.length > 0) {
-                            this.showStep(0);
-                        }
-                    });
-                    */
-                },
-                
-                simulatePrevention(data) {
-                    return {
-                        strategy: "Prevention",
-                        explanation: "Menghilangkan kondisi Hold & Wait dengan mengalokasikan semua resource di awal",
-                        steps: [
-                            {
-                                process: "P1",
-                                action: "Prevent Hold & Wait",
-                                detail: "Proses P1 menunggu semua resource (7 R1, 5 R2, 3 R3) tersedia sekaligus"
-                            },
-                            {
-                                process: "P2",
-                                action: "Prevent Hold & Wait",
-                                detail: "Proses P2 menunggu semua resource (3 R1, 2 R2, 2 R3) tersedia sekaligus"
-                            },
-                            {
-                                process: "P5",
-                                action: "Prevent Hold & Wait",
-                                detail: "Proses P5 menunggu semua resource (4 R1, 3 R2, 3 R3) tersedia sekaligus"
-                            }
-                        ]
-                    };
-                },
-                
-                simulateBankersAlgorithm(data) {
-                    // Dapatkan data aktual dari proses yang ada
-                    const processes = this.processes.map(p => p.name);
-                    const processesData = this.processes;
-                    const resources = this.resources;
-                    const available = Object.values(this.available);
-                    
-                    // Hasil banker's algorithm yang akan dikembalikan
-                    const result = {
-                        strategy: "Avoidance (Banker's Algorithm)",
-                        explanation: "Menggunakan Banker's Algorithm untuk menentukan state aman",
-                        safe: false,
-                        safe_sequence: [],
-                        steps: []
-                    };
-                    
-                    // Implementasi banker's algorithm untuk simulasi
-                    const n = processes.length;
-                    const m = resources.length;
-                    const allocation = processesData.map(p => p.allocation);
-                    const max_need = processesData.map(p => p.max);
-                    
-                    // Clone data untuk simulasi
-                    const work = [...available];
-                    const finish = Array(n).fill(false);
-                    const safeSeq = [];
-                    
-                    // Implementasi step-by-step banker's algorithm
-                    let stepCount = 1;
-                    let found;
-                    
-                    do {
-                        found = false;
-                        
-                        for (let i = 0; i < n; i++) {
-                            if (!finish[i]) {
-                                // Cek apakah proses dapat dieksekusi dengan resource yang tersedia
-                                let canExecute = true;
-                                const needs = [];
-                                
-                                for (let j = 0; j < m; j++) {
-                                    const need = max_need[i][j] - allocation[i][j];
-                                    needs.push(need);
-                                    
-                                    if (need > work[j]) {
-                                        canExecute = false;
-                                        break;
-                                    }
-                                }
-                                
-                                if (canExecute) {
-                                    // Proses dapat dieksekusi
-                                    const step = {
-                                        step: stepCount,
-                                        process: processes[i],
-                                        work_before: [...work],
-                                        need: needs
-                                    };
-                                    
-                                    // Simulasikan eksekusi dan pelepasan resource
-                                    for (let j = 0; j < m; j++) {
-                                        work[j] += allocation[i][j];
-                                    }
-                                    
-                                    step.work_after = [...work];
-                                    finish[i] = true;
-                                    safeSeq.push(processes[i]);
-                                    found = true;
-                                    
-                                    result.steps.push(step);
-                                    stepCount++;
-                                    break;
-                                }
-                            }
-                        }
-                    } while (found);
-                    
-                    // Cek hasil akhir
-                    result.safe = safeSeq.length === n;
-                    result.safe_sequence = safeSeq;
-                    
-                    if (result.safe) {
-                        result.explanation += `. Ditemukan safe sequence: ${safeSeq.join(' → ')}`;
-                    } else {
-                        const deadlocked = processes.filter((_, i) => !finish[i]);
-                        result.deadlocked = deadlocked;
-                        result.explanation += `. Tidak ditemukan safe sequence. Sistem dalam state tidak aman.`;
-                    }
-                    
-                    return result;
-                },
-                
-                simulateDetectionRecovery(data) {
-                    // Buat simulasi yang sesuai dengan jumlah proses yang ada
-                    const processes = this.processes.map(p => p.name);
-                    const deadlockedProcesses = this.deadlockProcesses.length > 0 
-                        ? this.deadlockProcesses 
-                        : processes.slice(0, Math.min(3, processes.length)); // Ambil max 3 proses jika belum ada deteksi
-                    
-                    // Bangun graf ketergantungan antar proses deadlock secara dinamis
-                    const dependencies = {};
-                    const circularWaits = [];
-                    
-                    if (deadlockedProcesses.length >= 2) {
-                        // Buat dependencies sederhana: circular wait antar proses deadlock
-                        for (let i = 0; i < deadlockedProcesses.length; i++) {
-                            const currentProc = deadlockedProcesses[i];
-                            const nextProc = deadlockedProcesses[(i + 1) % deadlockedProcesses.length];
-                            
-                            if (!dependencies[currentProc]) {
-                                dependencies[currentProc] = {
-                                    "waits_for": [nextProc],
-                                    "holds": []
-                                };
-                            } else {
-                                dependencies[currentProc]["waits_for"].push(nextProc);
-                            }
-                            
-                            // Tentukan resource yang dipegang (mengambil dari data proses)
-                            const procIndex = processes.indexOf(currentProc);
-                            if (procIndex !== -1) {
-                                const proc = this.processes[procIndex];
-                                for (let j = 0; j < this.resources.length; j++) {
-                                    if (proc.allocation[j] > 0) {
-                                        dependencies[currentProc]["holds"].push({
-                                            "resource": this.resources[j],
-                                            "amount": proc.allocation[j]
-                                        });
-                                    }
-                                }
-                            }
-                        }
-                        
-                        // Buat circular wait
-                        circularWaits.push(deadlockedProcesses.slice());
-                    }
-                    
-                    // Buat langkah-langkah recovery
-                    const steps = [];
-                    
-                    // Step 1: Deteksi deadlock
-                    steps.push({
-                        type: "detection",
-                        description: `Deteksi deadlock pada proses: ${deadlockedProcesses.join(', ')}`,
-                        deadlocked: deadlockedProcesses,
-                        dependencies: dependencies,
-                        circular_waits: circularWaits,
-                        detail: `Resource Allocation Graph menunjukkan circular wait: ${deadlockedProcesses.join(' → ')} → ${deadlockedProcesses[0]}`
-                    });
-                    
-                    // Pilih proses untuk diterminasi berdasarkan resource yang dipegang
-                    // Prioritas: proses dengan resource paling sedikit
-                    const processResourceCount = {};
-                    for (const proc of deadlockedProcesses) {
-                        const procIndex = processes.indexOf(proc);
-                        if (procIndex !== -1) {
-                            processResourceCount[proc] = this.processes[procIndex].allocation.reduce((a, b) => a + b, 0);
-                        } else {
-                            processResourceCount[proc] = 0;
-                        }
-                    }
-                    
-                    // Urutkan berdasarkan jumlah resource (ascending)
-                    const sortedByResource = Object.entries(processResourceCount)
-                        .sort((a, b) => a[1] - b[1])
-                        .map(entry => entry[0]);
-                    
-                    // Mulai terminasi dari proses dengan resource paling sedikit
-                    let remainingDeadlock = [...deadlockedProcesses];
-                    
-                    for (const victim of sortedByResource) {
-                        // Jika sudah tidak ada deadlock, keluar dari loop
-                        if (remainingDeadlock.length === 0) break;
-                        
-                        const procIndex = processes.indexOf(victim);
-                        if (procIndex === -1) continue;
-                        
-                        const resourcesFreed = [];
-                        for (let i = 0; i < this.resources.length; i++) {
-                            if (this.processes[procIndex].allocation[i] > 0) {
-                                resourcesFreed.push({
-                                    resource: this.resources[i],
-                                    amount: this.processes[procIndex].allocation[i]
-                                });
-                            }
-                        }
-                        
-                        // Hapus dari deadlock
-                        remainingDeadlock = remainingDeadlock.filter(p => p !== victim);
-                        
-                        // Step terminasi
-                        steps.push({
-                            type: "recovery",
-                            process: victim,
-                            action: "Terminate",
-                            resources_freed: resourcesFreed,
-                            detail: `Terminasi proses ${victim} dan lepaskan resource-nya`,
-                            remaining_deadlock: remainingDeadlock
-                        });
-                        
-                        // Jika deadlock sudah teratasi, tambahkan langkah untuk proses yang bisa continue
-                        if (remainingDeadlock.length === 0) {
-                            for (const proc of deadlockedProcesses) {
-                                if (proc !== victim) {
-                                    steps.push({
-                                        type: "continue",
-                                        process: proc,
-                                        action: "Continue",
-                                        detail: `Proses ${proc} dapat melanjutkan eksekusi karena deadlock sudah teratasi`
-                                    });
-                                }
-                            }
-                            break;
-                        }
-                    }
-                    
-                    return {
-                        strategy: "Detection & Recovery",
-                        explanation: `Mendeteksi deadlock dan melakukan recovery dengan terminasi proses. ${steps.length > 1 ? "Deadlock teratasi setelah terminasi proses " + sortedByResource[0] + "." : ""}`,
-                        steps: steps
-                    };
-                },
-                
-                nextStep() {
-                    if (this.currentStepIndex < this.solutionSteps.length - 1) {
-                        this.showStep(this.currentStepIndex + 1);
-                    } else {
-                        this.isSolutionComplete = true;
-                    }
-                },
-                
-                prevStep() {
-                    if (this.currentStepIndex > 0) {
-                        this.showStep(this.currentStepIndex - 1);
-                    }
-                },
-                
-                showStep(index) {
-                    this.currentStepIndex = index;
-                    this.isSolutionComplete = (index === this.solutionSteps.length - 1);
-                    
-                    this.updateVisualizationForStep(index);
-                },
-                
-                updateVisualizationForStep(stepIndex) {
-                    // Update visualisasi berdasarkan langkah yang sedang ditampilkan
-                    if (this.currentStrategy === 'Detection') {
-                        // Reset deadlock status terlebih dahulu
-                        for (let i = 0; i < this.processes.length; i++) {
-                            // Deep copy to avoid reference issues
-                            this.processes[i] = JSON.parse(JSON.stringify(this.processes[i]));
-                            delete this.processes[i].terminated;
-                        }
-                        
-                        // Simulasikan perubahan status proses dan resource berdasarkan langkah saat ini
-                        for (let i = 0; i <= stepIndex; i++) {
-                            const step = this.solutionSteps[i];
-                            
-                            if (step.type === 'recovery') {
-                                // Mark terminated process
-                                const terminatedProcess = step.process;
-                                const processIndex = this.processes.findIndex(p => p.name === terminatedProcess);
-                                
-                                if (processIndex !== -1) {
-                                    this.processes[processIndex].terminated = true;
-                                    
-                                    // Update available resources
-                                    if (step.resources_freed) {
-                                        step.resources_freed.forEach(res => {
-                                            const resourceIndex = this.resources.indexOf(res.resource);
-                                            if (resourceIndex !== -1) {
-                                                // Increment available
-                                                const resourceName = this.resources[resourceIndex];
-                                                if (this.available[resourceName] !== undefined) {
-                                                    this.available[resourceName] += res.amount;
-                                                }
-                                                
-                                                // Clear allocation for terminated process
-                                                this.processes[processIndex].allocation[resourceIndex] = 0;
-                                            }
-                                        });
-                                    }
-                                }
-                            }
-                        }
-                        
-                        // Update deadlock process list based on current step
-                        const currentStep = this.solutionSteps[stepIndex];
-                        if (currentStep.remaining_deadlock !== undefined) {
-                            this.deadlockProcesses = currentStep.remaining_deadlock;
-                        } else if (currentStep.deadlocked !== undefined) {
-                            this.deadlockProcesses = currentStep.deadlocked;
-                        }
-                    }
-                    
-                    // Add special handling for Banker's Algorithm
-                    if (this.currentStrategy === 'Avoidance') {
-                        // Reset process states first
-                        this.processes.forEach(p => delete p.executed);
-                        
-                        // Mark processes as executed based on the current step
-                        for (let i = 0; i <= stepIndex; i++) {
-                            const step = this.solutionSteps[i];
-                            const processIndex = this.processes.findIndex(p => p.name === step.process);
-                            if (processIndex !== -1) {
-                                this.processes[processIndex].executed = true;
-                            }
-                        }
-                    }
-                    
-                    this.renderVisualization();
-                },
-                
-                get currentStep() {
-                    return this.solutionSteps[this.currentStepIndex] || {};
-                },
-                
-                formatResources(arr) {
-                    if (!arr) return '';
-                    return arr.join(', ');
-                },
-                
-                renderVisualization() {
-                    window.alpineComponent = this;
-                    
-                    if (window.renderResourceAllocationGraph) {
-                        window.renderResourceAllocationGraph();
-                    }
-                }
-            };
-        }
-    </script>
-    <script src="/static/js/game.js"></script>
+                <div class="flex justify-end border-t border-white/10 pt-3">
+                    <button @click="showTerminateOptions = false" class="bg-gray-700 hover:bg-gray-800 px-4 py-2 rounded-lg text-sm">
+                        Cancel
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script src="/static/js/simulation.js"></script>
 </body>
 </html>

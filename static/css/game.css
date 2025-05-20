@@ -1,3 +1,27 @@
+/**
+ * Deadlock Simulator & Game Challenge CSS
+ * ======================================
+ * 
+ * File ini berisi styling untuk simulator deadlock dan game challenge.
+ * Digunakan di halaman /game (simulator) dan /game/challenge.
+ * 
+ * Komponen utama:
+ * - Resource Allocation Graph visualization
+ * - Process & Resource nodes styling
+ * - Deadlock detection highlighting
+ * - Animation effects for various interactions
+ * - Modal dialogs for deadlock resolution
+ * - Educational components and tooltips
+ * 
+ * Color Palette:
+ * - Primary Blue: #6366f1 (Process nodes)
+ * - Primary Green: #10b981 (Resource nodes)
+ * - Orange: #f97316 (Allocation edges)
+ * - Purple: #8b5cf6 (Request edges)
+ * - Red: #ef4444 (Deadlock highlight)
+ * - Teal: #14b8a6 (Educational highlights)
+ */
+
 #visualization {
     background-color: rgba(0, 0, 0, 0.3);
     overflow: hidden;
@@ -310,4 +334,604 @@ polygon.request-edge {
 .seq-pending {
     color: #94a3b8;
     opacity: 0.8;
+}
+
+/* Improved Deadlock Resolution Styles */
+.deadlock-resolution-container {
+    background-color: rgba(239, 68, 68, 0.1);
+    border-left: 4px solid #ef4444;
+    border-radius: 0.5rem;
+    padding: 1rem;
+    margin-top: 1rem;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    transition: all 0.3s ease;
+    animation: slideIn 0.5s ease-out;
+}
+
+.deadlock-resolution-title {
+    display: flex;
+    align-items: center;
+    font-weight: bold;
+    margin-bottom: 0.75rem;
+    color: #ef4444;
+}
+
+.deadlock-resolution-title svg {
+    margin-right: 0.5rem;
+    width: 1.25rem;
+    height: 1.25rem;
+}
+
+.strategy-card {
+    background-color: rgba(0, 0, 0, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 0.5rem;
+    padding: 0.75rem;
+    margin-bottom: 0.5rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.strategy-card:hover:not(.disabled) {
+    background-color: rgba(0, 0, 0, 0.3);
+    transform: translateY(-2px);
+    border-color: rgba(255, 255, 255, 0.2);
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.2);
+}
+
+.strategy-card.disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.strategy-card.selected {
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 1px #3b82f6;
+}
+
+.strategy-icon {
+    width: 2.5rem;
+    height: 2.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    margin-right: 0.75rem;
+    flex-shrink: 0;
+    font-size: 1.25rem;
+}
+
+.strategy-preemption .strategy-icon {
+    background-color: rgba(245, 158, 11, 0.3);
+    color: #f59e0b;
+}
+
+.strategy-kill .strategy-icon {
+    background-color: rgba(239, 68, 68, 0.3);
+    color: #ef4444;
+}
+
+.strategy-rollback .strategy-icon {
+    background-color: rgba(139, 92, 246, 0.3);
+    color: #8b5cf6;
+}
+
+.strategy-info {
+    flex-grow: 1;
+}
+
+.strategy-title {
+    font-weight: bold;
+    font-size: 0.95rem;
+}
+
+.strategy-description {
+    font-size: 0.75rem;
+    color: rgba(255, 255, 255, 0.6);
+}
+
+.strategy-penalty {
+    background-color: rgba(0, 0, 0, 0.2);
+    padding: 0.25rem 0.5rem;
+    border-radius: 0.25rem;
+    font-size: 0.75rem;
+    margin-left: 0.5rem;
+}
+
+.used-indicator {
+    position: absolute;
+    top: -0.5rem;
+    right: -0.5rem;
+    background-color: #ef4444;
+    color: white;
+    padding: 0.125rem 0.25rem;
+    font-size: 0.625rem;
+    border-radius: 0.25rem;
+    transform: rotate(15deg);
+}
+
+.limits-note {
+    font-size: 0.75rem;
+    margin-top: 0.5rem;
+    color: rgba(255, 255, 255, 0.7);
+    display: flex;
+    align-items: center;
+}
+
+.limits-note svg {
+    margin-right: 0.25rem;
+    width: 0.875rem;
+    height: 0.875rem;
+    color: #f59e0b;
+}
+
+/* Strategy selection modal */
+.strategy-modal {
+    position: fixed;
+    inset: 0;
+    background-color: rgba(0, 0, 0, 0.75);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 50;
+    animation: fadeIn 0.3s ease;
+}
+
+.strategy-modal-content {
+    background-color: rgba(30, 41, 59, 0.95);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 0.75rem;
+    padding: 1.5rem;
+    width: 100%;
+    max-width: 28rem;
+    max-height: 90vh;
+    overflow-y: auto;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(8px);
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.modal-title {
+    font-weight: bold;
+    font-size: 1.25rem;
+}
+
+.close-button {
+    background: none;
+    border: none;
+    color: rgba(255, 255, 255, 0.6);
+    cursor: pointer;
+    padding: 0.25rem;
+    transition: color 0.2s ease;
+}
+
+.close-button:hover {
+    color: white;
+}
+
+.modal-body {
+    margin-bottom: 1rem;
+}
+
+.selection-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    max-height: 60vh;
+    overflow-y: auto;
+}
+
+.selection-item {
+    background-color: rgba(0, 0, 0, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 0.5rem;
+    padding: 0.75rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.selection-item:hover {
+    background-color: rgba(0, 0, 0, 0.3);
+}
+
+.selection-info {
+    display: flex;
+    align-items: center;
+}
+
+.selection-icon {
+    margin-right: 0.75rem;
+    font-size: 1.25rem;
+}
+
+.selection-action {
+    color: #3b82f6;
+    font-weight: 500;
+    font-size: 0.875rem;
+}
+
+.modal-footer {
+    display: flex;
+    justify-content: flex-end;
+    padding-top: 0.5rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.modal-button {
+    background-color: rgba(0, 0, 0, 0.3);
+    color: white;
+    border: none;
+    padding: 0.5rem 1rem;
+    border-radius: 0.375rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.modal-button:hover {
+    background-color: rgba(0, 0, 0, 0.4);
+}
+
+.modal-button-primary {
+    background-color: #3b82f6;
+}
+
+.modal-button-primary:hover {
+    background-color: #2563eb;
+}
+
+/* Resolution result notification */
+.resolution-result {
+    background-color: rgba(16, 185, 129, 0.1);
+    border-left: 4px solid #10b981;
+    border-radius: 0.5rem;
+    padding: 1rem;
+    margin-top: 1rem;
+    animation: slideIn 0.5s ease-out;
+}
+
+.resolution-result-title {
+    display: flex;
+    align-items: center;
+    font-weight: bold;
+    margin-bottom: 0.5rem;
+    color: #10b981;
+}
+
+.resolution-result-title svg {
+    margin-right: 0.5rem;
+    width: 1.25rem;
+    height: 1.25rem;
+}
+
+.resolution-details {
+    font-size: 0.875rem;
+    color: rgba(255, 255, 255, 0.8);
+}
+
+.method-tag {
+    display: inline-block;
+    background-color: rgba(0, 0, 0, 0.2);
+    padding: 0.25rem 0.5rem;
+    border-radius: 0.25rem;
+    font-size: 0.75rem;
+    margin-top: 0.5rem;
+}
+
+.remaining-strategies {
+    margin-top: 0.75rem;
+    padding-top: 0.75rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.remaining-strategies-title {
+    font-size: 0.75rem;
+    font-weight: 500;
+    margin-bottom: 0.5rem;
+    color: rgba(255, 255, 255, 0.7);
+}
+
+.strategy-status-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+.strategy-status {
+    display: flex;
+    align-items: center;
+    padding: 0.25rem 0.5rem;
+    border-radius: 0.25rem;
+    font-size: 0.75rem;
+}
+
+.strategy-status-icon {
+    width: 0.75rem;
+    height: 0.75rem;
+    border-radius: 50%;
+    margin-right: 0.375rem;
+}
+
+.strategy-status-available .strategy-status-icon {
+    background-color: #10b981;
+}
+
+.strategy-status-used .strategy-status-icon {
+    background-color: #ef4444;
+}
+
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Animation for resource release visualization */
+@keyframes resourceReleaseWaves {
+    0% {
+        transform: scale(1);
+        opacity: 0.8;
+    }
+    100% {
+        transform: scale(2.5);
+        opacity: 0;
+    }
+}
+
+.resource-release-waves {
+    position: absolute;
+    border-radius: 50%;
+    border: 2px solid #10b981;
+    width: 30px;
+    height: 30px;
+    animation: resourceReleaseWaves 2s infinite;
+    pointer-events: none;
+    z-index: 10;
+}
+
+/* Animations for process termination */
+@keyframes terminationFade {
+    0% {
+        opacity: 1;
+        transform: scale(1);
+    }
+    50% {
+        opacity: 0.6;
+        transform: scale(0.9);
+    }
+    100% {
+        opacity: 0.3;
+        transform: scale(0.8);
+    }
+}
+
+.termination-animation {
+    animation: terminationFade 0.7s forwards;
+    opacity: 0.5;
+    transition: opacity 0.5s;
+}
+
+.process-terminated-overlay {
+    position: absolute;
+    inset: 0;
+    background-color: rgba(239, 68, 68, 0.2);
+    border-radius: 0.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    color: #ef4444;
+    z-index: 5;
+    pointer-events: none;
+}
+
+/* Tambahkan animasi berikut di bagian bawah file */
+
+@keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }
+    20%, 40%, 60%, 80% { transform: translateX(5px); }
+}
+
+.shake-animation {
+    animation: shake 0.5s cubic-bezier(.36,.07,.19,.97) both;
+}
+
+/* Educational components styling */
+.edu-panel {
+    background-color: rgba(20, 184, 166, 0.1);
+    border-left: 4px solid #14b8a6;
+    border-radius: 0.5rem;
+    padding: 1rem;
+    margin: 1rem 0;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.edu-panel-title {
+    display: flex;
+    align-items: center;
+    font-weight: bold;
+    margin-bottom: 0.75rem;
+    color: #14b8a6;
+}
+
+.edu-panel-title svg {
+    margin-right: 0.5rem;
+    width: 1.25rem;
+    height: 1.25rem;
+}
+
+.edu-tip {
+    position: relative;
+    display: inline-block;
+    cursor: help;
+    border-bottom: 1px dotted #14b8a6;
+}
+
+.edu-tip .tooltip {
+    visibility: hidden;
+    width: 240px;
+    background-color: rgba(15, 23, 42, 0.95);
+    color: #fff;
+    text-align: left;
+    border-radius: 6px;
+    padding: 8px 12px;
+    position: absolute;
+    z-index: 1;
+    bottom: 125%;
+    left: 50%;
+    margin-left: -120px;
+    opacity: 0;
+    transition: opacity 0.3s;
+    font-size: 0.75rem;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    border: 1px solid rgba(20, 184, 166, 0.3);
+}
+
+.edu-tip .tooltip::after {
+    content: "";
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    margin-left: -5px;
+    border-width: 5px;
+    border-style: solid;
+    border-color: rgba(15, 23, 42, 0.95) transparent transparent transparent;
+}
+
+.edu-tip:hover .tooltip {
+    visibility: visible;
+    opacity: 1;
+}
+
+.concept-badge {
+    display: inline-block;
+    background-color: rgba(20, 184, 166, 0.2);
+    color: #14b8a6;
+    padding: 0.125rem 0.375rem;
+    border-radius: 0.25rem;
+    font-size: 0.75rem;
+    margin-right: 0.5rem;
+    cursor: help;
+    border: 1px solid rgba(20, 184, 166, 0.3);
+}
+
+.edu-step {
+    position: relative;
+    padding-left: 1.5rem;
+    margin-bottom: 0.5rem;
+}
+
+.edu-step::before {
+    content: attr(data-step);
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 1rem;
+    height: 1rem;
+    background-color: #14b8a6;
+    color: white;
+    font-size: 0.75rem;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.algorithm-box {
+    background-color: rgba(15, 23, 42, 0.7);
+    border-radius: 0.5rem;
+    padding: 1rem;
+    border-left: 4px solid #14b8a6;
+    font-family: 'Courier New', Courier, monospace;
+    font-size: 0.875rem;
+    white-space: pre;
+    overflow-x: auto;
+    margin: 1rem 0;
+}
+
+.edu-toggle {
+    cursor: pointer;
+    color: #14b8a6;
+    display: flex;
+    align-items: center;
+    font-weight: bold;
+    margin-bottom: 0.5rem;
+}
+
+.edu-toggle svg {
+    transition: transform 0.2s;
+}
+
+.edu-toggle.open svg {
+    transform: rotate(90deg);
+}
+
+.edu-content {
+    overflow: hidden;
+    max-height: 0;
+    transition: max-height 0.3s ease-out;
+}
+
+.edu-content.open {
+    max-height: 1000px;
+    transition: max-height 0.5s ease-in;
+}
+
+/* Navigation styles for educational content */
+.edu-navigation {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 1rem;
+    padding-top: 0.75rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.edu-nav-button {
+    background-color: rgba(20, 184, 166, 0.2);
+    color: #14b8a6;
+    border: none;
+    padding: 0.5rem 1rem;
+    border-radius: 0.375rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    font-size: 0.875rem;
+}
+
+.edu-nav-button:hover {
+    background-color: rgba(20, 184, 166, 0.3);
+}
+
+.edu-nav-button svg {
+    width: 1rem;
+    height: 1rem;
+}
+
+.edu-nav-button.prev svg {
+    margin-right: 0.5rem;
+}
+
+.edu-nav-button.next svg {
+    margin-left: 0.5rem;
 }

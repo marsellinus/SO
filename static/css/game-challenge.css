@@ -1,0 +1,339 @@
+/* Styling for Deadlock Challenge Game */
+
+/* Base styles */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, 
+                 "Helvetica Neue", Arial, sans-serif;
+    line-height: 1.5;
+    color: white;
+    background: linear-gradient(to bottom right, #1e293b, #4c1d95);
+    min-height: 100vh;
+}
+
+/* Animations */
+@keyframes pulse {
+    0%, 100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.6;
+    }
+}
+
+.animate-pulse {
+    animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes bounce {
+    0%, 100% {
+        transform: translateY(0);
+    }
+    50% {
+        transform: translateY(-10px);
+    }
+}
+
+.animate-bounce {
+    animation: bounce 1s ease infinite;
+}
+
+@keyframes floatUp {
+    0% {
+        transform: translateY(0);
+        opacity: 1;
+    }
+    100% {
+        transform: translateY(-50px);
+        opacity: 0;
+    }
+}
+
+.animate-float-up {
+    animation: floatUp 2s ease-out forwards;
+}
+
+/* Game UI elements */
+#visualization {
+    transition: height 0.3s ease;
+    background-color: rgba(0, 0, 0, 0.3);
+    border-radius: 0.5rem;
+}
+
+.transition-colors {
+    transition: background-color 0.3s ease, border-color 0.3s ease, color 0.3s ease;
+}
+
+/* Drag and drop styles */
+[draggable=true] {
+    cursor: grab;
+}
+
+[draggable=true]:active {
+    cursor: grabbing;
+}
+
+/* Hide elements with x-show="false" during page load */
+[x-cloak] {
+    display: none !important;
+}
+
+/* Floating points indicator */
+.points-indicator {
+    position: absolute;
+    font-weight: bold;
+    color: #facc15;
+    animation: floatUp 2s ease-out forwards;
+    z-index: 50;
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.1);
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.3);
+}
+
+/* Star rating styles */
+.star-filled {
+    color: #facc15;
+}
+
+.star-empty {
+    color: #4b5563;
+}
+
+/* Deadlock Resolution Styling */
+.deadlock-resolution-container {
+    border-radius: 0.5rem;
+    background-color: rgba(239, 68, 68, 0.1);
+    padding: 0.75rem;
+    margin-top: 0.5rem;
+}
+
+.strategy-card {
+    background-color: rgba(0, 0, 0, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 0.5rem;
+    padding: 0.75rem;
+    margin-bottom: 0.5rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.strategy-card:hover:not(.disabled) {
+    background-color: rgba(0, 0, 0, 0.3);
+    transform: translateY(-2px);
+    border-color: rgba(255, 255, 255, 0.2);
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.2);
+}
+
+.strategy-card.disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.strategy-icon {
+    width: 2.5rem;
+    height: 2.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    margin-right: 0.75rem;
+    flex-shrink: 0;
+    font-size: 1.25rem;
+}
+
+.strategy-preemption .strategy-icon {
+    background-color: rgba(245, 158, 11, 0.3);
+    color: #f59e0b;
+}
+
+.strategy-kill .strategy-icon {
+    background-color: rgba(239, 68, 68, 0.3);
+    color: #ef4444;
+}
+
+.strategy-rollback .strategy-icon {
+    background-color: rgba(139, 92, 246, 0.3);
+    color: #8b5cf6;
+}
+
+.strategy-info {
+    flex-grow: 1;
+}
+
+.strategy-title {
+    font-weight: bold;
+    font-size: 0.95rem;
+}
+
+.strategy-description {
+    font-size: 0.75rem;
+    color: rgba(255, 255, 255, 0.6);
+}
+
+.strategy-penalty {
+    background-color: rgba(0, 0, 0, 0.2);
+    padding: 0.25rem 0.5rem;
+    border-radius: 0.25rem;
+    font-size: 0.75rem;
+    margin-left: 0.5rem;
+}
+
+.used-indicator {
+    position: absolute;
+    top: -0.5rem;
+    right: -0.5rem;
+    background-color: #ef4444;
+    color: white;
+    padding: 0.125rem 0.25rem;
+    font-size: 0.625rem;
+    border-radius: 0.25rem;
+    transform: rotate(15deg);
+}
+
+.limits-note {
+    font-size: 0.75rem;
+    margin-top: 0.5rem;
+    color: rgba(255, 255, 255, 0.7);
+    display: flex;
+    align-items: center;
+}
+
+.limits-note svg {
+    margin-right: 0.25rem;
+    width: 0.875rem;
+    height: 0.875rem;
+    color: #f59e0b;
+}
+
+.resolution-result-title {
+    display: flex;
+    align-items: center;
+    font-weight: bold;
+    margin-bottom: 0.5rem;
+    color: #10b981;
+}
+
+.resolution-result-title svg {
+    margin-right: 0.5rem;
+    width: 1.25rem;
+    height: 1.25rem;
+}
+
+.resolution-details {
+    font-size: 0.875rem;
+    color: rgba(255, 255, 255, 0.8);
+}
+
+/* Animation for resource release visualization */
+@keyframes resourceReleaseWaves {
+    0% {
+        transform: scale(1);
+        opacity: 0.8;
+    }
+    100% {
+        transform: scale(2.5);
+        opacity: 0;
+    }
+}
+
+.resource-release-waves {
+    position: absolute;
+    border-radius: 50%;
+    border: 2px solid #10b981;
+    width: 30px;
+    height: 30px;
+    animation: resourceReleaseWaves 2s infinite;
+    pointer-events: none;
+    z-index: 10;
+}
+
+/* Animations for process termination */
+@keyframes terminationFade {
+    0% {
+        opacity: 1;
+        transform: scale(1);
+    }
+    50% {
+        opacity: 0.6;
+        transform: scale(0.9);
+    }
+    100% {
+        opacity: 0.3;
+        transform: scale(0.8);
+    }
+}
+
+.termination-animation {
+    animation: terminationFade 0.7s forwards;
+}
+
+.process-terminated-overlay {
+    position: absolute;
+    inset: 0;
+    background-color: rgba(239, 68, 68, 0.2);
+    border-radius: 0.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    color: #ef4444;
+    z-index: 5;
+    pointer-events: none;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    #visualization {
+        height: 250px !important;
+    }
+    
+    .text-3xl {
+        font-size: 1.5rem;
+    }
+    
+    .p-6 {
+        padding: 1rem;
+    }
+    
+    .gap-6 {
+        gap: 0.75rem;
+    }
+}

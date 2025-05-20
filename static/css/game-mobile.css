@@ -1,0 +1,286 @@
+/* Mobile-specific styles */
+
+/* Touch-friendly buttons */
+button, a.button {
+    min-height: 38px;
+}
+
+/* Prevent zoom on input focus on iOS */
+input, select, textarea {
+    font-size: 16px;
+}
+
+/* Better drag and drop for touch devices */
+.draggable-resource {
+    touch-action: none; /* Prevents scrolling while dragging on touch screens */
+}
+
+/* Responsive visualization */
+#visualization-container {
+    max-height: 50vh;
+    min-height: 250px;
+    background-color: rgba(0, 0, 0, 0.4);
+}
+
+/* Modal adjustments for mobile */
+.modal-content {
+    width: calc(100% - 32px);
+    max-width: 500px; 
+    max-height: 85vh;
+    overflow-y: auto;
+}
+
+/* Improve tap targets */
+.process-item, .resource-item {
+    min-height: 50px;
+}
+
+/* Strategy buttons for mobile */
+@media (max-width: 640px) {
+    .strategy-button {
+        width: 100%;
+        margin-bottom: 8px;
+        padding: 12px;
+    }
+    
+    /* Stack labels and badges */
+    .strategy-info {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    
+    /* Smaller text on mobile */
+    .text-xs {
+        font-size: 0.65rem;
+    }
+    
+    /* Smaller help icons */
+    .help-icon {
+        font-size: 1rem;
+    }
+}
+
+/* Improve scrolling on mobile */
+.overflow-auto {
+    -webkit-overflow-scrolling: touch; /* Smoother scrolling on iOS */
+    scrollbar-width: thin;
+}
+
+/* Prevent accidental zooming */
+* {
+    touch-action: manipulation;
+}
+
+/* Enhanced mobile styling */
+
+/* Base improvements */
+body {
+    --scrollbar-color: rgba(255, 255, 255, 0.2);
+    --scrollbar-bg: rgba(0, 0, 0, 0.2);
+}
+
+/* Custom scrollbar */
+.scrollbar-thin {
+    scrollbar-width: thin;
+    scrollbar-color: var(--scrollbar-color) var(--scrollbar-bg);
+}
+.scrollbar-thin::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+.scrollbar-thin::-webkit-scrollbar-track {
+    background: var(--scrollbar-bg);
+    border-radius: 3px;
+}
+.scrollbar-thin::-webkit-scrollbar-thumb {
+    background-color: var(--scrollbar-color);
+    border-radius: 3px;
+}
+
+/* Better shadows for cards */
+.shadow-card {
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25),
+                0 2px 5px rgba(0, 0, 0, 0.15);
+}
+
+/* Glass morphism effects */
+.glass-panel {
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+}
+
+/* Animations */
+@keyframes pulse-glow {
+    0%, 100% {
+        box-shadow: 0 0 0 rgba(220, 38, 38, 0);
+    }
+    50% {
+        box-shadow: 0 0 15px rgba(220, 38, 38, 0.4);
+    }
+}
+
+.pulse-warning {
+    animation: pulse-glow 2s infinite;
+}
+
+/* Process & resource cards */
+.process-card, .resource-card {
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.process-card:hover, .resource-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+}
+
+/* Drag and drop visual feedback */
+.dragging {
+    opacity: 0.8;
+    transform: scale(1.05);
+    z-index: 100;
+}
+
+.drag-over {
+    border-color: #60a5fa !important;
+    box-shadow: 0 0 0 2px rgba(96, 165, 250, 0.5);
+}
+
+/* SVG Styles for Resource Allocation Graph */
+.process-node {
+    fill: #6366f1;
+    stroke: #4f46e5;
+    stroke-width: 2px;
+}
+
+.resource-node {
+    fill: #10b981;
+    stroke: #059669;
+    stroke-width: 2px;
+}
+
+.allocation-edge {
+    stroke: #f97316;
+    stroke-width: 2px;
+}
+
+.request-edge {
+    stroke: #8b5cf6;
+    stroke-width: 2px;
+    stroke-dasharray: 5,5;
+}
+
+.deadlock-process {
+    fill: #ef4444;
+    stroke: #dc2626;
+    stroke-width: 2px;
+}
+
+.deadlock-edge {
+    stroke: #ef4444;
+    stroke-width: 3px;
+}
+
+/* Mobile-specific adjustments */
+@media (max-width: 768px) {
+    /* Improved drag-and-drop for touch */
+    .draggable-resource {
+        touch-action: none;
+    }
+    
+    /* More compact panels */
+    .p-4 {
+        padding: 0.75rem;
+    }
+    
+    /* Smaller resource cards on mobile */
+    .resource-grid {
+        grid-template-columns: repeat(auto-fill, minmax(60px, 1fr));
+    }
+    
+    /* Stack control buttons vertically */
+    .control-buttons {
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+    
+    /* Make modals fill more screen space */
+    .modal-content {
+        width: 90%;
+        max-width: none;
+    }
+    
+    /* Better visualization size */
+    #visualization-container {
+        height: 250px;
+    }
+}
+
+/* Animated icons and status indicators */
+@keyframes resource-glow {
+    0%, 100% { filter: brightness(1); }
+    50% { filter: brightness(1.3); }
+}
+
+.resource-icon {
+    display: inline-flex;
+    justify-content: center;
+    align-items: center;
+    width: 24px;
+    height: 24px;
+    border-radius: 4px;
+}
+
+.resource-active {
+    animation: resource-glow 2s infinite;
+}
+
+/* Progress indicators */
+.progress-bar {
+    height: 4px;
+    border-radius: 2px;
+    overflow: hidden;
+    background-color: rgba(255, 255, 255, 0.1);
+}
+
+.progress-fill {
+    height: 100%;
+    transition: width 0.3s ease;
+}
+
+/* Badges and indicators */
+.status-badge {
+    font-size: 0.65rem;
+    padding: 0.15rem 0.5rem;
+    border-radius: 999px;
+    font-weight: 600;
+}
+
+/* Toast notifications */
+.toast {
+    position: fixed;
+    bottom: 1rem;
+    right: 1rem;
+    padding: 0.75rem 1rem;
+    background-color: rgba(0, 0, 0, 0.8);
+    border-radius: 0.5rem;
+    z-index: 50;
+    transform: translateY(0);
+    transition: transform 0.3s ease, opacity 0.3s ease;
+}
+
+.toast-hidden {
+    transform: translateY(100%);
+    opacity: 0;
+}
+
+/* Fix untuk Alpine.js x-show */
+[x-cloak] { 
+    display: none !important; 
+}
+
+/* Fix untuk debugging */
+.debug-panel {
+    z-index: 9999;
+    font-size: 10px;
+    opacity: 0.8;
+}

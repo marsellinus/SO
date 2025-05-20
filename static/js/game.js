@@ -723,4 +723,217 @@ document.addEventListener('DOMContentLoaded', function() {
         arrowhead.setAttribute('class', className);
         svg.appendChild(arrowhead);
     }
+
+    // Add touch event support for drag and drop
+    function initTouchDragAndDrop() {
+        const draggableElements = document.querySelectorAll('.draggable-resource');
+        const dropTargets = document.querySelectorAll('[data-droppable="true"]');
+        
+        let draggedElement = null;
+        let touchOffsetX = 0;
+        let touchOffsetY = 0;
+        
+        // For each draggable element
+        draggableElements.forEach(element => {
+            element.addEventListener('touchstart', function(e) {
+                e.preventDefault();
+                draggedElement = this;
+                
+                // Calculate touch offset
+                const touch = e.touches[0];
+                const rect = draggedElement.getBoundingClientRect();
+                touchOffsetX = touch.clientX - rect.left;
+                touchOffsetY = touch.clientY - rect.top;
+                
+                // Initial position
+                this.classList.add('dragging');
+                this.style.position = 'fixed';
+                this.style.zIndex = '1000';
+                
+                updateTouchPosition(e);
+            });
+        });
+        
+        document.addEventListener('touchmove', function(e) {
+            if (!draggedElement) return;
+            e.preventDefault();
+            updateTouchPosition(e);
+        });
+        
+        document.addEventListener('touchend', function(e) {
+            if (!draggedElement) return;
+            
+            // Check if dropped on valid target
+            let targetElement = null;
+            
+            dropTargets.forEach(target => {
+                const rect = target.getBoundingClientRect();
+                const touch = e.changedTouches[0];
+                
+                if (touch.clientX >= rect.left && touch.clientX <= rect.right &&
+                    touch.clientY >= rect.top && touch.clientY <= rect.bottom) {
+                    targetElement = target;
+                }
+            });
+            
+            // If dropped on valid target, dispatch custom drop event
+            if (targetElement) {
+                const resourceId = draggedElement.getAttribute('data-resource-id');
+                const customEvent = new CustomEvent('resource-dropped', {
+                    detail: {
+                        resourceId: resourceId,
+                        targetId: targetElement.getAttribute('data-process-id')
+                    }
+                });
+                targetElement.dispatchEvent(customEvent);
+            }
+            
+            // Reset element
+            draggedElement.style.position = '';
+            draggedElement.style.top = '';
+            draggedElement.style.left = '';
+            draggedElement.style.zIndex = '';
+            draggedElement.classList.remove('dragging');
+            draggedElement = null;
+        });
+        
+        function updateTouchPosition(e) {
+            if (!draggedElement) return;
+            
+            const touch = e.touches[0];
+            draggedElement.style.top = (touch.clientY - touchOffsetY) + 'px';
+            draggedElement.style.left = (touch.clientX - touchOffsetX) + 'px';
+        }
+    }
+
+    // Initialize both mouse and touch drag/drop
+    function initDragAndDrop() {
+        // Existing mouse drag/drop code
+        // ...existing code...
+        
+        // Touch drag/drop for mobile
+        initTouchDragAndDrop();
+    }
+
+    // Make visualization responsive
+    function makeVisualizationResponsive() {
+        const resizeObserver = new ResizeObserver(entries => {
+            for (let entry of entries) {
+                const width = entry.contentRect.width;
+                const height = entry.contentRect.height;
+                
+                // Update SVG viewBox or canvas size
+                const svg = entry.target.querySelector('svg');
+                if (svg) {
+                    svg.setAttribute('viewBox', `0 0 ${width} ${height}`);
+                    svg.setAttribute('width', width);
+                    svg.setAttribute('height', height);
+                }
+            }
+        });
+        
+        // Observe visualization container for size changes
+        const container = document.getElementById('visualization-container');
+        if (container) {
+            resizeObserver.observe(container);
+        }
+    }
+
+    // Improve touch handling for drag and drop
+    function enhanceTouchInteractions() {
+        // Add visual feedback for drop targets
+        document.addEventListener('dragover', function(e) {
+            const dropTarget = findDropTarget(e.target);
+            if (!dropTarget) return;
+            
+            dropTarget.classList.add('drag-over');
+            
+            // Hapus class setelah 300ms
+            setTimeout(() => {
+                dropTarget.classList.remove('drag-over');
+            }, 300);
+        });
+        
+        // Find the nearest valid drop target
+        function findDropTarget(element) {
+            if (!element) return null;
+            
+            if (element.getAttribute('data-droppable') === 'true') {
+                return element;
+            }
+            
+            // Traverse up to find droppable parent
+            return findDropTarget(element.parentElement);
+        }
+        
+        // Add tablet detection
+        const isTablet = window.innerWidth >= 768 && window.innerWidth <= 1024;
+        if (isTablet) {
+            document.body.classList.add('tablet-device');
+        }
+    }
+
+    // Add subtle animation to UI elements
+    function addUIAnimations() {
+        // Add subtle hover effects to cards
+        document.querySelectorAll('.process-card, .resource-card').forEach(card => {
+            card.addEventListener('mouseenter', function() {
+                this.style.transform = 'translateY(-2px)';
+            });
+            
+            card.addEventListener('mouseleave', function() {
+                this.style.transform = '';
+            });
+        });
+        
+        // Highlight newly added resources
+        document.addEventListener('resource-allocated', function(e) {
+            const { resourceId, processId } = e.detail;
+            const resourceElement = document.querySelector(`[data-allocated-resource="${resourceId}"]`);
+            
+            if (resourceElement) {
+                resourceElement.classList.add('resource-active');
+                setTimeout(() => {
+                    resourceElement.classList.remove('resource-active');
+                }, 2000);
+            }
+        });
+    }
+
+    // Update visualization container size on resize
+    function handleResponsiveVisualization() {
+        const resizeObserver = new ResizeObserver(entries => {
+            for (let entry of entries) {
+                // Update SVG viewBox if visualization exists
+                updateVisualization();
+            }
+        });
+        
+        const vizContainer = document.getElementById('visualization-container');
+        if (vizContainer) {
+            resizeObserver.observe(vizContainer);
+        }
+        
+        // Also handle orientation changes on mobile
+        window.addEventListener('orientationchange', () => {
+            setTimeout(() => {
+                updateVisualization();
+            }, 100);
+        });
+    }
+
+    // Initialize mobile-friendly features
+    document.addEventListener('DOMContentLoaded', function() {
+        // Add responsive visualization
+        makeVisualizationResponsive();
+        
+        // Detect mobile devices and adjust UI
+        if (/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)) {
+            document.body.classList.add('mobile-device');
+        }
+        
+        enhanceTouchInteractions();
+        addUIAnimations();
+        handleResponsiveVisualization();
+    });
 });

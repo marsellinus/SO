@@ -1,6 +1,17 @@
 /**
- * Engine utama untuk game Deadlock Solver
+ * Game Engine adalah kelas inti yang mengelola logika simulasi deadlock.
+ * 
+ * Fitur utama:
+ * 1. Menyediakan abstraksi dan implementasi inti dari simulasi deadlock
+ * 2. Mengelola algoritma deteksi deadlock
+ * 3. Menangani alokasi resource dan eksekusi proses
+ * 4. Mengimplementasikan strategi resolusi deadlock (prevention, avoidance, detection)
+ * 5. Bertindak sebagai "backend" untuk simulasi dalam game
+ * 
+ * Game Engine tidak berinteraksi langsung dengan UI tetapi menyediakan API
+ * yang digunakan oleh komponen UI untuk memperbarui tampilan.
  */
+
 class DeadlockGameEngine {
     constructor() {
         this.currentLevel = null;
