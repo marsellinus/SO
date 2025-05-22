@@ -12,6 +12,9 @@ function simulationController() {
         // UI State
         showPreemptionOptions: false,
         showTerminateOptions: false,
+        showEditNeedsModal: false,
+        editingProcess: null,
+        editingNeeds: [],
         
         // Educational State
         showRealtimeEdu: true,  // Enabled by default
@@ -85,6 +88,11 @@ function simulationController() {
                 { id: 'r2', name: 'Memory', icon: '📊', held_by: null },
                 { id: 'r3', name: 'Disk', icon: '💾', held_by: null }
             ];
+            
+            // Add state for editing process needs
+            this.showEditNeedsModal = false;
+            this.editingProcess = null;
+            this.editingNeeds = [];
             
             // Initialize with first educational step
             this.addEduStep('welcome', 'Selamat datang di Simulator Deadlock! Mulailah dengan membuat proses dan resource.');
@@ -314,44 +322,305 @@ function simulationController() {
             this.renderVisualization();
         },
         
-        // Drag and drop functionality
+        // Improved drag and drop functionality
         dragResource(event, resourceId) {
             event.dataTransfer.setData('text/plain', resourceId);
+            
+            // Highlight compatible processes
+            this.highlightCompatibleProcesses(resourceId);
+        },
+        
+        // Highlight processes that are compatible with this resource
+        highlightCompatibleProcesses(resourceId) {
+            const resource = this.resources.find(r => r.id === resourceId);
+            if (!resource) return;
+            
+            // Remove all highlights first
+            document.querySelectorAll('.process-highlight').forEach(el => {
+                el.classList.remove('process-highlight');
+                el.classList.remove('process-incompatible');
+                el.classList.remove('process-warning');
+            });
+            
+            // If resource is already allocated, don't highlight anything
+            if (resource.held_by !== null) return;
+            
+            // Highlight processes that need this resource
+            this.processes.forEach(process => {
+                const processEl = document.querySelector(`[data-process-id="${process.id}"]`);
+                if (!processEl) return;
+                
+                if (process.needs.includes(resourceId)) {
+                    // This process needs this resource
+                    if (process.allocation.includes(resourceId)) {
+                        // Already allocated
+                        processEl.classList.add('process-incompatible');
+                    } else {
+                        // Compatible
+                        processEl.classList.add('process-highlight');
+                    }
+                } else {
+                    // Process doesn't need this resource
+                    processEl.classList.add('process-incompatible');
+                }
+            });
+        },
+        
+        // Clear process highlights
+        clearProcessHighlights() {
+            document.querySelectorAll('.process-highlight, .process-incompatible, .process-warning').forEach(el => {
+                el.classList.remove('process-highlight');
+                el.classList.remove('process-incompatible');
+                el.classList.remove('process-warning');
+            });
         },
         
         // Handle drop on process
         dropResourceOnProcess(event, processId) {
             const resourceId = event.dataTransfer.getData('text/plain');
-            if (!resourceId) return;
+            if(!resourceId) return;
             
-            this.allocateResource(resourceId, processId);
+            this.clearProcessHighlights();
+            
+            // Check compatibility before allocation
+            this.checkResourceCompatibility(resourceId, processId)
+                .then(result => {
+                    if (result.compatible) {
+                        if (result.warning === "potential_deadlock") {
+                            this.addEduStep('warning', result.educational_feedback);
+                            
+                            // Show more detailed explanation
+                            if (result.details && result.details.cycle_descriptions) {
+                                result.details.cycle_descriptions.forEach(desc => {
+                                    this.addEduStep('tip', `Potensi circular wait: ${desc}`);
+                                });
+                            }
+                            
+                            // Confirm allocation despite warning
+                            if (confirm("Alokasi ini berpotensi menyebabkan deadlock. Tetap lanjutkan?")) {
+                                this.allocateResource(resourceId, processId);
+                            }
+                        } else {
+                            this.allocateResource(resourceId, processId);
+                            if (result.educational_feedback) {
+                                this.addEduStep('success', result.educational_feedback);
+                            }
+                        }
+                    } else {
+                        // Resource is not compatible
+                        this.addEduStep('warning', result.educational_feedback || "Resource tidak kompatibel dengan proses ini.");
+                    }
+                })
+                .catch(error => {
+                    console.error("Error checking compatibility:", error);
+                    this.addEduStep('warning', "Terjadi kesalahan saat memeriksa kompatibilitas resource.");
+                });
         },
         
-        // Allocate resource to process
+        // Check resource compatibility with backend
+        async checkResourceCompatibility(resourceId, processId) {
+            try {
+                // Local compatibility check first
+                const resource = this.resources.find(r => r.id === resourceId);
+                const process = this.processes.find(p => p.id === processId);
+                
+                if (!resource || !process) {
+                    return { compatible: false, reason: "not_found" };
+                }
+                
+                // If resource is already allocated
+                if (resource.held_by !== null) {
+                    return {
+                        compatible: false,
+                        reason: "resource_allocated",
+                        educational_feedback: `${resource.name} sudah dialokasikan ke proses lain.`
+                    };
+                }
+                
+                // If process doesn't need this resource
+                if (!process.needs.includes(resourceId)) {
+                    return {
+                        compatible: false,
+                        reason: "not_needed",
+                        educational_feedback: `${process.name} tidak membutuhkan ${resource.name}.`
+                    };
+                }
+                
+                // If resource is already allocated to this process
+                if (process.allocation.includes(resourceId)) {
+                    return {
+                        compatible: false,
+                        reason: "already_allocated",
+                        educational_feedback: `${resource.name} sudah dialokasikan ke ${process.name}.`
+                    };
+                }
+                
+                // For more complex checks, use backend
+                // Temporarily simulate the allocation to check for potential deadlock
+                let simProcesses = JSON.parse(JSON.stringify(this.processes));
+                let simResources = JSON.parse(JSON.stringify(this.resources));
+                
+                const simProcess = simProcesses.find(p => p.id === processId);
+                const simResource = simResources.find(r => r.id === resourceId);
+                
+                if (simProcess && simResource) {
+                    if (!simProcess.allocation) simProcess.allocation = [];
+                    simProcess.allocation.push(resourceId);
+                    simResource.held_by = processId;
+                    
+                    // Check for potential deadlock
+                    const potentialDeadlock = this.checkForPotentialDeadlock(simProcesses, simResources);
+                    
+                    if (potentialDeadlock) {
+                        return {
+                            compatible: true, // Still allow but warn
+                            warning: "potential_deadlock",
+                            educational_feedback: "Alokasi ini berpotensi menyebabkan deadlock!",
+                            details: potentialDeadlock
+                        };
+                    }
+                }
+                
+                return { compatible: true };
+                
+                // Optional: Use backend API for more sophisticated checks
+                // const response = await fetch('/api/check_compatibility', {
+                //     method: 'POST',
+                //     headers: {
+                //         'Content-Type': 'application/json',
+                //     },
+                //     body: JSON.stringify({
+                //         processId,
+                //         resourceId,
+                //         processes: this.processes,
+                //         resources: this.resources
+                //     }),
+                // });
+                
+                // if (!response.ok) {
+                //     throw new Error('Network response was not ok');
+                // }
+                
+                // return await response.json();
+            } catch (error) {
+                console.error("Error checking compatibility:", error);
+                return { compatible: false, reason: "error" };
+            }
+        },
+        
+        // Check for potential deadlock after a simulated allocation
+        checkForPotentialDeadlock(processes, resources) {
+            // Build a wait-for graph
+            const waitForGraph = {};
+            
+            // Initialize graph
+            processes.forEach(process => {
+                waitForGraph[process.id] = [];
+            });
+            
+            // Identify which process is waiting for which other process
+            processes.forEach(process => {
+                // Find resources this process needs but doesn't have
+                const neededResources = process.needs.filter(
+                    resourceId => !process.allocation.includes(resourceId)
+                );
+                
+                // For each needed resource, see who holds it
+                neededResources.forEach(resourceId => {
+                    const resource = resources.find(r => r.id === resourceId);
+                    if (resource && resource.held_by && resource.held_by !== process.id) {
+                        // This process is waiting for a process holding the resource
+                        waitForGraph[process.id].push(resource.held_by);
+                    }
+                });
+            });
+            
+            // Check for cycles in the wait-for graph
+            const visited = {};
+            const recStack = {};
+            let cycleFound = false;
+            let cyclePath = [];
+            
+            const detectCycle = (node, path = []) => {
+                if (!visited[node]) {
+                    visited[node] = true;
+                    recStack[node] = true;
+                    path.push(node);
+                    
+                    for (const neighbor of waitForGraph[node]) {
+                        if (!visited[neighbor]) {
+                            if (detectCycle(neighbor, [...path])) {
+                                return true;
+                            }
+                        } else if (recStack[neighbor]) {
+                            // Found cycle
+                            const cycleStart = path.indexOf(neighbor);
+                            cyclePath = [...path.slice(cycleStart), neighbor];
+                            return true;
+                        }
+                    }
+                }
+                
+                recStack[node] = false;
+                return false;
+            };
+            
+            // Try to detect cycle from each process
+            for (const process of processes) {
+                if (!visited[process.id]) {
+                    if (detectCycle(process.id)) {
+                        cycleFound = true;
+                        break;
+                    }
+                }
+            }
+            
+            if (cycleFound && cyclePath.length > 0) {
+                // Build a description of the cycle
+                const cycleDescription = cyclePath.map(id => {
+                    const proc = processes.find(p => p.id === id);
+                    return proc ? proc.name : id;
+                }).join(" → ") + " → " + cyclePath[0];
+                
+                return {
+                    cycle: cyclePath,
+                    cycleDescription: cycleDescription
+                };
+            }
+            
+            return null;
+        },
+        
+        // Allocate resource to process with improved feedback
         allocateResource(resourceId, processId) {
             const resource = this.resources.find(r => r.id === resourceId);
             const process = this.processes.find(p => p.id === processId);
             
             if (!resource || !process) return;
             
-            if (resource.held_by !== null) {
-                console.log("Resource already allocated");
-                this.addEduStep('warning', `${resource.name} sudah dialokasikan ke proses lain dan tidak dapat digunakan.`);
-                return;
-            }
-            
-            if (!process.needs.includes(resourceId)) {
-                console.log("Process doesn't need this resource");
-                this.addEduStep('warning', `${process.name} tidak membutuhkan ${resource.name}. Perhatikan kebutuhan resource setiap proses.`);
-                return;
-            }
-            
+            // All compatibility checks should have been done before calling this
             // Allocate resource
             resource.held_by = processId;
             process.allocation.push(resourceId);
             
             // Add educational step
             this.addEduStep('success', `${resource.name} berhasil dialokasikan ke ${process.name}`);
+            
+            // Check all allocations status for this process
+            const allNeededResources = process.needs.length;
+            const allocatedResources = process.allocation.length;
+            
+            if (allocatedResources === allNeededResources) {
+                this.addEduStep('success', `${process.name} telah mendapatkan semua resource yang dibutuhkan. Proses dapat dieksekusi.`);
+            } else {
+                const remainingResources = process.needs.filter(id => !process.allocation.includes(id));
+                const remainingNames = remainingResources.map(id => {
+                    const res = this.resources.find(r => r.id === id);
+                    return res ? res.name : id;
+                }).join(", ");
+                
+                this.addEduStep('info', `${process.name} masih membutuhkan: ${remainingNames}`);
+            }
             
             // Check for circular dependency potential
             const otherProcesses = this.processes.filter(p => p.id !== processId);
@@ -698,6 +967,70 @@ function simulationController() {
         getProcessName(id) {
             const process = this.processes.find(p => p.id === id);
             return process ? process.name : id;
+        },
+        
+        // Helper method to get resource names from IDs
+        getResourceNamesFromIds(ids) {
+            return ids.map(id => this.getResourceName(id)).join(", ");
+        },
+        
+        // Edit process needs
+        editProcessNeeds(index) {
+            const process = this.processes[index];
+            if (!process) return;
+            
+            // Show modal with checkboxes for all resources
+            this.editingProcess = process;
+            this.editingNeeds = [...process.needs]; // Make a copy
+            this.showEditNeedsModal = true;
+        },
+        
+        // Save edited process needs
+        saveProcessNeeds() {
+            if (!this.editingProcess) return;
+            
+            // Update process needs
+            this.updateProcessNeeds(this.editingProcess.id, this.editingNeeds);
+            
+            // Close modal
+            this.showEditNeedsModal = false;
+            this.editingProcess = null;
+            this.editingNeeds = [];
+        },
+        
+        // Update process needs
+        updateProcessNeeds(processId, needsIds) {
+            const process = this.processes.find(p => p.id === processId);
+            if (!process) return;
+            
+            // Update process needs
+            process.needs = [...needsIds];
+            
+            // Check if any allocated resources are no longer needed
+            const allocationsToRemove = [];
+            process.allocation.forEach(resId => {
+                if (!process.needs.includes(resId)) {
+                    allocationsToRemove.push(resId);
+                }
+            });
+            
+            // Release resources that are no longer needed
+            allocationsToRemove.forEach(resId => {
+                const resource = this.resources.find(r => r.id === resId);
+                if (resource && resource.held_by === processId) {
+                    resource.held_by = null;
+                }
+                process.allocation = process.allocation.filter(id => id !== resId);
+            });
+            
+            if (allocationsToRemove.length > 0) {
+                const resourceNames = this.getResourceNamesFromIds(allocationsToRemove);
+                this.addEduStep('info', `Resource yang tidak lagi dibutuhkan telah dilepaskan: ${resourceNames}`);
+            }
+            
+            // Update visualization
+            this.checkForDeadlock();
+            this.renderVisualization();
         },
         
         // Render resource allocation graph visualization

@@ -1,5 +1,5 @@
 from flask import Flask, jsonify, request, render_template, send_from_directory
-from solver import handle_deadlock, solve_deadlock, generate_random_scenario
+from solver import handle_deadlock, solve_deadlock, generate_random_scenario, check_resource_compatibility
 
 app = Flask(__name__, 
             static_folder='../static',
@@ -50,6 +50,18 @@ def generate():
     
     scenario = generate_random_scenario(num_processes, num_resources, num_cores)
     return jsonify(scenario)
+
+@app.route('/api/check_compatibility', methods=['POST'])
+def check_compatibility():
+    """
+    Check if a resource is compatible with a process based on its needs.
+    """
+    data = request.json
+    if not data or 'processId' not in data or 'resourceId' not in data:
+        return jsonify({"error": "Invalid input"}), 400
+    
+    result = check_resource_compatibility(data['processId'], data['resourceId'], data.get('processes', []), data.get('resources', []))
+    return jsonify(result)
 
 @app.route('/')
 def index():

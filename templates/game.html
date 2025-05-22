@@ -112,39 +112,67 @@
                         </div>
                     </div>
                     
-                    <!-- Process List -->
+                    <!-- Process List with modified resource display -->
                     <h3 class="font-semibold mb-2">Active Processes</h3>
                     <div class="space-y-2 max-h-[400px] overflow-y-auto">
                         <template x-for="(process, index) in processes" :key="process.id">
                             <div 
                                 :class="{'border-red-500': deadlockProcesses.includes(process.id), 'border-indigo-700': !deadlockProcesses.includes(process.id)}"
-                                class="bg-indigo-900/50 p-3 rounded-lg border"
+                                class="bg-indigo-900/50 p-3 rounded-lg border relative"
                                 :data-process-id="process.id"
                                 @dragover.prevent
                                 @drop="dropResourceOnProcess($event, process.id)"
+                                @dragenter="event.target.classList.add('drag-over')"
+                                @dragleave="event.target.classList.remove('drag-over')"
                             >
                                 <div class="flex justify-between">
                                     <div class="flex items-center">
                                         <span class="text-xl mr-2" x-text="process.icon"></span>
                                         <span x-text="process.name"></span>
                                     </div>
-                                    <button @click="removeProcess(index)" class="text-red-400 hover:text-red-300">
-                                        ✖
-                                    </button>
+                                    <div class="flex gap-1">
+                                        <button @click="editProcessNeeds(index)" class="text-blue-400 hover:text-blue-300 px-1 rounded">
+                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                                            </svg>
+                                        </button>
+                                        <button @click="removeProcess(index)" class="text-red-400 hover:text-red-300 px-1 rounded">
+                                            ✖
+                                        </button>
+                                    </div>
                                 </div>
                                 
-                                <!-- Resource Needs -->
+                                <!-- Resource indicators without text, only color dots -->
                                 <div class="mt-2">
-                                    <div class="text-xs text-gray-400">Needs:</div>
-                                    <div class="flex flex-wrap gap-1 mt-1">
+                                    <div class="text-xs text-gray-400 mb-1">Resources:</div>
+                                    <div class="flex flex-wrap gap-1">
                                         <template x-for="(resourceId, idx) in process.needs" :key="idx">
-                                            <span 
-                                                class="text-xs px-2 py-1 rounded-md"
-                                                :class="process.allocation.includes(resourceId) ? 'bg-green-700' : 'bg-purple-900'"
+                                            <div 
+                                                :class="{'resource-indicator-allocated': process.allocation.includes(resourceId), 'resource-indicator-needed': !process.allocation.includes(resourceId)}"
+                                                class="resource-indicator"
+                                                :title="getResourceName(resourceId)"
                                             >
-                                                <span x-text="getResourceName(resourceId)"></span>
-                                            </span>
+                                            </div>
                                         </template>
+                                    </div>
+                                </div>
+                                
+                                <!-- Process status indicator -->
+                                <div class="mt-2">
+                                    <div class="bg-black/30 h-2 w-full rounded-full overflow-hidden">
+                                        <div 
+                                            class="h-full rounded-full transition-all duration-500"
+                                            :class="{'bg-green-500': process.allocation.length === process.needs.length, 'bg-yellow-500': process.allocation.length > 0 && process.allocation.length < process.needs.length, 'bg-gray-500': process.allocation.length === 0}"
+                                            :style="`width: ${(process.allocation.length / process.needs.length) * 100}%`"
+                                        ></div>
+                                    </div>
+                                    <div class="text-xs text-right mt-1" x-text="`${process.allocation.length}/${process.needs.length} resources`"></div>
+                                </div>
+                                
+                                <!-- Deadlock indicator -->
+                                <div x-show="deadlockProcesses.includes(process.id)" class="absolute top-0 right-0 transform translate-x-1/4 -translate-y-1/4">
+                                    <div class="bg-red-500 text-white text-xs font-bold rounded-full h-6 w-6 flex items-center justify-center">
+                                        !
                                     </div>
                                 </div>
                             </div>
@@ -281,7 +309,9 @@
                                 class="bg-green-900/30 p-3 rounded-lg flex items-center cursor-grab relative"
                                 draggable="true"
                                 @dragstart="dragResource($event, resource.id)"
+                                @dragend="clearProcessHighlights()"
                                 :data-resource-id="resource.id"
+                                :title="`Drag to allocate ${resource.name} to a process that needs it`"
                             >
                                 <span class="text-xl mr-2" x-text="resource.icon"></span>
                                 <span x-text="resource.name"></span>
@@ -447,6 +477,50 @@
                 <div class="flex justify-end border-t border-white/10 pt-3">
                     <button @click="showTerminateOptions = false" class="bg-gray-700 hover:bg-gray-800 px-4 py-2 rounded-lg text-sm">
                         Cancel
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Process Needs Editing Modal -->
+        <div x-show="showEditNeedsModal" class="fixed inset-0 bg-black/80 flex items-center justify-center z-50">
+            <div class="bg-gradient-to-br from-slate-800 to-indigo-900 p-5 rounded-xl max-w-md w-full mx-4">
+                <div class="flex justify-between items-center mb-4 border-b border-white/10 pb-2">
+                    <h3 class="text-xl font-bold" x-text="'Edit Resources for ' + (editingProcess?.name || '')"></h3>
+                    <button @click="showEditNeedsModal = false" class="text-white/70 hover:text-white">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                    </button>
+                </div>
+                
+                <div class="mb-4">
+                    <p class="text-sm mb-3 text-gray-300">Select which resources this process needs:</p>
+                    <div class="grid grid-cols-2 gap-2">
+                        <template x-for="resource in resources" :key="resource.id">
+                            <div class="flex items-center bg-black/20 p-2 rounded">
+                                <input 
+                                    type="checkbox" 
+                                    :id="'edit-need-'+resource.id" 
+                                    :value="resource.id" 
+                                    x-model="editingNeeds"
+                                    class="mr-2"
+                                >
+                                <label :for="'edit-need-'+resource.id" class="flex items-center cursor-pointer">
+                                    <span class="text-lg mr-1" x-text="resource.icon"></span>
+                                    <span x-text="resource.name"></span>
+                                </label>
+                            </div>
+                        </template>
+                    </div>
+                </div>
+                
+                <div class="flex justify-end border-t border-white/10 pt-3">
+                    <button @click="showEditNeedsModal = false" class="bg-gray-700 hover:bg-gray-800 px-4 py-2 rounded-lg text-sm mr-2">
+                        Cancel
+                    </button>
+                    <button @click="saveProcessNeeds()" class="bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded-lg text-sm">
+                        Save Changes
                     </button>
                 </div>
             </div>

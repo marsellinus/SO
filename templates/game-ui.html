@@ -190,37 +190,6 @@
                 <div class="bg-black/30 p-4 rounded-xl">
                     <h2 class="text-xl font-bold mb-4">Resource Allocation Graph</h2>
                     <div id="visualization" class="h-80 bg-black/20 rounded-lg"></div>
-                    
-                    <!-- Resolution Result -->
-                    <div x-show="showResolutionResult" class="resolution-result">
-                        <div class="resolution-result-title">
-                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
-                            </svg>
-                            Deadlock Resolved
-                        </div>
-                        <p class="resolution-details" x-text="resolutionMessage"></p>
-                        <div class="method-tag" x-text="formatResolutionMethod(resolutionMethod)"></div>
-                        
-                        <!-- Show remaining strategies -->
-                        <div class="remaining-strategies">
-                            <div class="remaining-strategies-title">Remaining Strategies:</div>
-                            <div class="strategy-status-list">
-                                <div class="strategy-status" :class="availableStrategies.preemption ? 'strategy-status-available' : 'strategy-status-used'">
-                                    <span class="strategy-status-icon"></span>
-                                    <span>Preemption</span>
-                                </div>
-                                <div class="strategy-status" :class="availableStrategies.kill ? 'strategy-status-available' : 'strategy-status-used'">
-                                    <span class="strategy-status-icon"></span>
-                                    <span>Kill Process</span>
-                                </div>
-                                <div class="strategy-status" :class="availableStrategies.rollback ? 'strategy-status-available' : 'strategy-status-used'">
-                                    <span class="strategy-status-icon"></span>
-                                    <span>Rollback</span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
                 </div>
 
                 <!-- Resources & Actions Column -->
@@ -243,7 +212,7 @@
                         </div>
                     </div>
                     
-                    <!-- Deadlock Resolution - Moved to this section -->
+                    <!-- Deadlock Resolution -->
                     <div x-show="deadlockDetected" class="bg-black/30 p-4 rounded-xl">
                         <h2 class="text-xl font-bold mb-3">Deadlock Resolution</h2>
                         <p class="text-sm mb-3">Select a strategy to resolve the deadlock:</p>
@@ -294,17 +263,6 @@
                                 </svg>
                                 Each strategy can be used only once per level. Score may go negative!
                             </div>
-                        </div>
-                        
-                        <!-- Resolution Result -->
-                        <div x-show="showResolutionResult" class="mt-4 bg-green-900/30 p-3 rounded-lg">
-                            <div class="resolution-result-title">
-                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
-                                </svg>
-                                Deadlock Resolved
-                            </div>
-                            <p class="resolution-details" x-text="resolutionMessage"></p>
                         </div>
                     </div>
 

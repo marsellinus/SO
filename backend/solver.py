@@ -688,3 +688,192 @@ def generate_random_scenario(num_processes, num_resources, num_cores=2):
             "process_descriptions": process_descriptions
         }
     }
+
+def check_resource_compatibility(process_id, resource_id, processes, resources):
+    """
+    Check if a resource is compatible with a process based on its needs and current allocations.
+    Returns information about compatibility and educational feedback.
+    """
+    # Find the process and resource
+    process = next((p for p in processes if p.get('id') == process_id), None)
+    resource = next((r for r in resources if r.get('id') == resource_id), None)
+    
+    if not process or not resource:
+        return {
+            "compatible": False,
+            "reason": "Process or resource not found",
+            "educational_feedback": "Pastikan proses dan resource yang dipilih valid."
+        }
+    
+    # Check if resource is already allocated
+    if resource.get('held_by') is not None:
+        return {
+            "compatible": False,
+            "reason": "resource_allocated",
+            "educational_feedback": f"Resource {resource.get('name')} sudah dialokasikan ke proses lain. Resource hanya dapat digunakan oleh satu proses pada satu waktu (Mutual Exclusion)."
+        }
+    
+    # Check if process needs this resource
+    if resource_id not in process.get('needs', []):
+        return {
+            "compatible": False,
+            "reason": "not_needed",
+            "educational_feedback": f"Proses {process.get('name')} tidak membutuhkan resource {resource.get('name')}. Pastikan Anda hanya mengalokasikan resource yang dibutuhkan oleh proses."
+        }
+    
+    # Check if resource is already allocated to this process
+    if resource_id in process.get('allocation', []):
+        return {
+            "compatible": False,
+            "reason": "already_allocated",
+            "educational_feedback": f"Resource {resource.get('name')} sudah dialokasikan ke proses {process.get('name')}. Tidak perlu mengalokasikan resource yang sama dua kali."
+        }
+    
+    # Check potential for deadlock if allocated
+    potential_deadlock = check_potential_deadlock(process_id, resource_id, processes, resources)
+    if potential_deadlock["potential_deadlock"]:
+        return {
+            "compatible": True,  # Still allow but warn
+            "warning": "potential_deadlock",
+            "educational_feedback": potential_deadlock["educational_feedback"],
+            "details": potential_deadlock["details"]
+        }
+    
+    # Resource is compatible
+    return {
+        "compatible": True,
+        "educational_feedback": f"Resource {resource.get('name')} dapat dialokasikan ke proses {process.get('name')}."
+    }
+
+def check_potential_deadlock(process_id, resource_id, processes, resources):
+    """
+    Check if allocating this resource might lead to a deadlock situation.
+    """
+    # Create temporary copies to simulate the allocation
+    temp_processes = [p.copy() for p in processes]
+    temp_resources = [r.copy() for r in resources]
+    
+    # Find the process and resource in the temp lists
+    temp_process = next((p for p in temp_processes if p.get('id') == process_id), None)
+    temp_resource = next((r for r in temp_resources if r.get('id') == resource_id), None)
+    
+    if not temp_process or not temp_resource:
+        return {"potential_deadlock": False}
+    
+    # Simulate the allocation
+    if 'allocation' not in temp_process:
+        temp_process['allocation'] = []
+    temp_process['allocation'].append(resource_id)
+    temp_resource['held_by'] = process_id
+    
+    # Check for circular dependencies
+    circular_dependencies = []
+    for p in temp_processes:
+        # Resources this process holds
+        held_resources = p.get('allocation', [])
+        
+        # Resources this process still needs
+        needed_resources = [r for r in p.get('needs', []) if r not in held_resources]
+        
+        for needed_res_id in needed_resources:
+            # Find who holds this needed resource
+            needed_res = next((r for r in temp_resources if r.get('id') == needed_res_id), None)
+            if needed_res and needed_res.get('held_by') is not None:
+                # This process is waiting for a resource held by another process
+                holder_process_id = needed_res.get('held_by')
+                if holder_process_id != p.get('id'):  # Not itself
+                    circular_dependencies.append({
+                        "waiting_process": p.get('id'),
+                        "waiting_process_name": p.get('name', p.get('id')),
+                        "needed_resource": needed_res_id,
+                        "needed_resource_name": needed_res.get('name', needed_res_id),
+                        "holder_process": holder_process_id,
+                        "holder_process_name": next((proc.get('name', proc.get('id')) for proc in temp_processes if proc.get('id') == holder_process_id), holder_process_id)
+                    })
+    
+    # Check for cycles in the dependencies
+    potential_cycles = find_potential_cycles(circular_dependencies)
+    
+    if potential_cycles:
+        cycle_descriptions = []
+        for cycle in potential_cycles:
+            cycle_desc = " → ".join([f"{dep['waiting_process_name']} menunggu {dep['needed_resource_name']} dari {dep['holder_process_name']}" for dep in cycle])
+            cycle_descriptions.append(cycle_desc)
+        
+        return {
+            "potential_deadlock": True,
+            "educational_feedback": "Alokasi ini dapat menyebabkan kondisi circular wait yang berpotensi deadlock!",
+            "details": {
+                "cycles": potential_cycles,
+                "cycle_descriptions": cycle_descriptions
+            }
+        }
+    
+    return {"potential_deadlock": False}
+
+def find_potential_cycles(dependencies):
+    """
+    Find potential cycles in the dependency graph.
+    """
+    if not dependencies:
+        return []
+    
+    # Build a graph representation
+    graph = {}
+    for dep in dependencies:
+        waiting = dep['waiting_process']
+        holder = dep['holder_process']
+        
+        if waiting not in graph:
+            graph[waiting] = []
+        graph[waiting].append({
+            "process": holder,
+            "dependency": dep
+        })
+    
+    # DFS to find cycles
+    cycles = []
+    visited = set()
+    path = []
+    path_set = set()
+    
+    def dfs(node):
+        if node in path_set:
+            # Found a cycle
+            cycle_start = path.index(node)
+            cycle_path = path[cycle_start:]
+            
+            # Convert path to dependencies
+            cycle_deps = []
+            for i in range(len(cycle_path)):
+                current = cycle_path[i]
+                next_node = cycle_path[(i + 1) % len(cycle_path)]
+                
+                # Find the dependency between current and next
+                for neighbor in graph.get(current, []):
+                    if neighbor["process"] == next_node:
+                        cycle_deps.append(neighbor["dependency"])
+                        break
+            
+            if cycle_deps and len(cycle_deps) > 0:
+                cycles.append(cycle_deps)
+            return
+        
+        if node in visited:
+            return
+        
+        visited.add(node)
+        path.append(node)
+        path_set.add(node)
+        
+        for neighbor in graph.get(node, []):
+            dfs(neighbor["process"])
+        
+        path.pop()
+        path_set.remove(node)
+    
+    # Start DFS from each node
+    for node in graph:
+        dfs(node)
+    
+    return cycles

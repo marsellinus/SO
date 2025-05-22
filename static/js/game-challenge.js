@@ -583,6 +583,26 @@ function gameController() {
             this.showResolutionResult = true;
         },
         
+        // Format strategy name for display
+        formatStrategyName(strategy) {
+            const names = {
+                'preemption': 'Preemption',
+                'kill': 'Kill Process',
+                'rollback': 'Rollback'
+            };
+            return names[strategy] || strategy;
+        },
+        
+        // Format resolution method for display
+        formatResolutionMethod(method) {
+            const methods = {
+                'preemption': 'Resource Preemption',
+                'kill': 'Process Termination',
+                'rollback': 'Complete Rollback'
+            };
+            return methods[method] || method;
+        },
+        
         // Efek visual saat resource diambil paksa
         showPreemptionEffect(processId, resourceId) {
             const process = this.processes.find(p => p.id === processId);
